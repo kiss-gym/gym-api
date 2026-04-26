@@ -1,7 +1,10 @@
 using GymApi.Api.Infrastructure;
 using GymApi.Application.SessionTracking;
+using GymApi.Application.UserManagement;
 using GymApi.Domain.SessionTracking;
+using GymApi.Domain.UserManagement;
 using GymApi.Infrastructure.SessionTracking;
+using GymApi.Infrastructure.UserManagement;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,7 +13,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "GymApi — Session Tracking", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Kiss Gym API", Version = "v1" });
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
@@ -19,10 +22,13 @@ builder.Services.AddSwaggerGen(c =>
     }
 });
 
+// User Management (generic subdomain)
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
+builder.Services.AddScoped<IUserContext, MockUserContext>();
+
 // Session Tracking (core subdomain)
 builder.Services.AddScoped<ICurrentSessionService, CurrentSessionService>();
-
-// Dependency Inversion: Injecting the Infrastructure implementation
 builder.Services.AddSingleton<ISessionRepository, InMemorySessionRepository>();
 
 builder.Services.AddTransient<ExceptionMiddleware>();

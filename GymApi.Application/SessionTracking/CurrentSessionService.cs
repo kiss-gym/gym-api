@@ -1,14 +1,16 @@
 using GymApi.Domain.SessionTracking;
+using GymApi.Domain.UserManagement;
 
 namespace GymApi.Application.SessionTracking;
 
-public sealed class CurrentSessionService(ISessionRepository repository) : ICurrentSessionService
+public sealed class CurrentSessionService(ISessionRepository repository, IUserContext userContext) : ICurrentSessionService
 {
     public async Task<TrainingSession> CreateAsync(
         Guid userId,
         Guid? inheritFromSessionId = null,
         CancellationToken ct = default)
     {
+        // For now, we allow passing userId, but in a real app we'd likely validate it against userContext
         var session = TrainingSession.Create(userId);
 
         if (inheritFromSessionId.HasValue)
@@ -26,8 +28,16 @@ public sealed class CurrentSessionService(ISessionRepository repository) : ICurr
 
     public async Task<TrainingSession> GetAsync(Guid sessionId, CancellationToken ct = default)
     {
-        return await repository.FindAsync(sessionId, ct)
+        var session = await repository.FindAsync(sessionId, ct)
                ?? throw new KeyNotFoundException($"Session {sessionId} not found.");
+        
+        // Authorization check: User can only access their own sessions
+        if (userContext.IsAuthenticated && session.UserId != userContext.UserId)
+        {
+            throw new UnauthorizedAccessException("You do not have access to this session.");
+        }
+
+        return session;
     }
 
     public async Task<ExerciseEntry> AddExerciseAsync(

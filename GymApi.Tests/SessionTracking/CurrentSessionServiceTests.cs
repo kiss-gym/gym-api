@@ -1,5 +1,6 @@
 using GymApi.Application.SessionTracking;
 using GymApi.Domain.SessionTracking;
+using GymApi.Domain.UserManagement;
 using NSubstitute;
 using NSubstitute.ReturnsExtensions;
 using NUnit.Framework;
@@ -10,13 +11,15 @@ namespace GymApi.Tests.SessionTracking;
 public sealed class CurrentSessionServiceTests
 {
     private ISessionRepository _repository = null!;
+    private IUserContext _userContext = null!;
     private CurrentSessionService _service = null!;
 
     [SetUp]
     public void SetUp()
     {
         _repository = Substitute.For<ISessionRepository>();
-        _service = new CurrentSessionService(_repository);
+        _userContext = Substitute.For<IUserContext>();
+        _service = new CurrentSessionService(_repository, _userContext);
     }
 
     [Test]
@@ -64,15 +67,31 @@ public sealed class CurrentSessionServiceTests
     {
         _repository.FindAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).ReturnsNull();
 
-        // Using Assert.That with Throws.TypeOf<TException>() allows us to remove the 'async' modifier from the test method.
         Assert.That(async () => await _service.GetAsync(Guid.NewGuid()), Throws.TypeOf<KeyNotFoundException>());
+    }
+
+    [Test]
+    public async Task GetAsync_WhenAuthenticatedAsDifferentUser_ThrowsUnauthorizedAccessException()
+    {
+        var userId = Guid.NewGuid();
+        var otherUserId = Guid.NewGuid();
+        var session = TrainingSession.Create(userId);
+        
+        _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
+        _userContext.UserId.Returns(otherUserId);
+        _userContext.IsAuthenticated.Returns(true);
+
+        Assert.That(async () => await _service.GetAsync(session.Id), Throws.TypeOf<UnauthorizedAccessException>());
     }
 
     [Test]
     public async Task AddExerciseAsync_AddsExerciseAndPersists()
     {
-        var session = TrainingSession.Create(Guid.NewGuid());
+        var userId = Guid.NewGuid();
+        var session = TrainingSession.Create(userId);
         _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
+        _userContext.UserId.Returns(userId);
+        _userContext.IsAuthenticated.Returns(true);
 
         var result = await _service.AddExerciseAsync(session.Id, "Bench Press", null, null);
 
@@ -87,9 +106,12 @@ public sealed class CurrentSessionServiceTests
     [Test]
     public async Task RemoveExerciseAsync_RemovesAndPersists()
     {
-        var session = TrainingSession.Create(Guid.NewGuid());
+        var userId = Guid.NewGuid();
+        var session = TrainingSession.Create(userId);
         var exercise = session.AddExercise("Dip", null, null);
         _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
+        _userContext.UserId.Returns(userId);
+        _userContext.IsAuthenticated.Returns(true);
 
         await _service.RemoveExerciseAsync(session.Id, exercise.Id);
 
@@ -100,8 +122,11 @@ public sealed class CurrentSessionServiceTests
     [Test]
     public async Task FinishAsync_FinishesSessionAndPersists()
     {
-        var session = TrainingSession.Create(Guid.NewGuid());
+        var userId = Guid.NewGuid();
+        var session = TrainingSession.Create(userId);
         _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
+        _userContext.UserId.Returns(userId);
+        _userContext.IsAuthenticated.Returns(true);
 
         var result = await _service.FinishAsync(session.Id);
 
@@ -112,7 +137,8 @@ public sealed class CurrentSessionServiceTests
     [Test]
     public async Task StartExerciseAsync_StartsPendingAndPersists()
     {
-        var previous = TrainingSession.Create(Guid.NewGuid());
+        var userId = Guid.NewGuid();
+        var previous = TrainingSession.Create(userId);
         previous.AddExercise("Romanian DL", null, null);
         previous.Finish();
 
@@ -121,6 +147,8 @@ public sealed class CurrentSessionServiceTests
 
         var pendingId = session.Exercises[0].Id;
         _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
+        _userContext.UserId.Returns(userId);
+        _userContext.IsAuthenticated.Returns(true);
 
         var result = await _service.StartExerciseAsync(session.Id, pendingId);
 
