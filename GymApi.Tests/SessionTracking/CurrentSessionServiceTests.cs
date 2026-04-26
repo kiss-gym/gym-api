@@ -60,11 +60,12 @@ public sealed class CurrentSessionServiceTests
     }
 
     [Test]
-    public async Task GetAsync_WhenNotFound_ThrowsKeyNotFoundException()
+    public void GetAsync_WhenNotFound_ThrowsKeyNotFoundException()
     {
         _repository.FindAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).ReturnsNull();
 
-        Assert.ThrowsAsync<KeyNotFoundException>(() => _service.GetAsync(Guid.NewGuid()));
+        // Using Assert.That with Throws.TypeOf<TException>() allows us to remove the 'async' modifier from the test method.
+        Assert.That(async () => await _service.GetAsync(Guid.NewGuid()), Throws.TypeOf<KeyNotFoundException>());
     }
 
     [Test]
