@@ -71,7 +71,7 @@ public sealed class CurrentSessionServiceTests
     }
 
     [Test]
-    public async Task GetAsync_WhenAuthenticatedAsDifferentUser_ThrowsUnauthorizedAccessException()
+    public void GetAsync_WhenAuthenticatedAsDifferentUser_ThrowsUnauthorizedAccessException()
     {
         var userId = Guid.NewGuid();
         var otherUserId = Guid.NewGuid();

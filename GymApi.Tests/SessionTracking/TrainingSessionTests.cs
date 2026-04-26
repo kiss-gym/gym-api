@@ -60,7 +60,7 @@ public sealed class TrainingSessionTests
         var session = TrainingSession.Create(_anyUser);
         session.Finish();
 
-        Assert.Throws<InvalidOperationException>(() => session.Finish());
+        Assert.Throws<InvalidOperationException>(session.Finish);
     }
 
     [Test]

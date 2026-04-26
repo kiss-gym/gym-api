@@ -8,7 +8,7 @@ namespace GymApi.Domain.SessionTracking;
 public sealed class ExerciseEntry
 {
     public Guid Id { get; private set; }
-    public string AutoLabel { get; private set; } = "";
+    public string AutoLabel { get; private init; } = "";
     public string? PhotoUrl { get; private set; }
     public DateTimeOffset? StartedAt { get; private set; }
     public DateTimeOffset? MaxEndAt { get; private set; }

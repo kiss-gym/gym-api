@@ -61,7 +61,7 @@ public class UserServiceTests
     }
 
     [Test]
-    public async Task Register_ExistingUser_ThrowsException()
+    public void Register_ExistingUser_ThrowsException()
     {
         var existing = User.Create(Guid.NewGuid(), "exists@test.com", "Exists");
         _repoMock.GetByEmailAsync("exists@test.com", Arg.Any<CancellationToken>())
