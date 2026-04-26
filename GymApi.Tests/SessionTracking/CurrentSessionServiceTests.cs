@@ -27,7 +27,7 @@ public sealed class CurrentSessionServiceTests
     {
         var userId = Guid.NewGuid();
 
-        var result = await _service.CreateAsync(userId);
+        var result = await _service.CreateSessionAsync(userId);
 
         await _repository.Received(1).SaveAsync(
             Arg.Is<TrainingSession>(s => s.UserId == userId && s.Status == SessionStatus.Active),
@@ -51,7 +51,7 @@ public sealed class CurrentSessionServiceTests
 
         _repository.FindAsync(previous.Id, Arg.Any<CancellationToken>()).Returns(previous);
 
-        var result = await _service.CreateAsync(userId, previous.Id);
+        var result = await _service.CreateSessionAsync(userId, previous.Id);
 
         Assert.Multiple(() =>
         {
@@ -67,7 +67,7 @@ public sealed class CurrentSessionServiceTests
     {
         _repository.FindAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).ReturnsNull();
 
-        Assert.That(async () => await _service.GetAsync(Guid.NewGuid()), Throws.TypeOf<KeyNotFoundException>());
+        Assert.That(async () => await _service.GetSessionAsync(Guid.NewGuid()), Throws.TypeOf<KeyNotFoundException>());
     }
 
     [Test]
@@ -81,7 +81,7 @@ public sealed class CurrentSessionServiceTests
         _userContext.UserId.Returns(otherUserId);
         _userContext.IsAuthenticated.Returns(true);
 
-        Assert.That(async () => await _service.GetAsync(session.Id), Throws.TypeOf<UnauthorizedAccessException>());
+        Assert.That(async () => await _service.GetSessionAsync(session.Id), Throws.TypeOf<UnauthorizedAccessException>());
     }
 
     [Test]
@@ -128,7 +128,7 @@ public sealed class CurrentSessionServiceTests
         _userContext.UserId.Returns(userId);
         _userContext.IsAuthenticated.Returns(true);
 
-        var result = await _service.FinishAsync(session.Id);
+        var result = await _service.FinishSessionAsync(session.Id);
 
         await _repository.Received(1).SaveAsync(session, Arg.Any<CancellationToken>());
         Assert.That(result.Status, Is.EqualTo(SessionStatus.Finished));

@@ -19,7 +19,7 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
         [FromBody] CreateSessionRequest request,
         CancellationToken ct)
     {
-        var session = await service.CreateAsync(request.UserId, request.InheritFromSessionId, ct);
+        var session = await service.CreateSessionAsync(request.UserId, request.InheritFromSessionId, ct);
         return CreatedAtAction(nameof(GetSession), new { sessionId = session.Id },
             SessionResponse.From(session));
     }
@@ -30,7 +30,7 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSession(Guid sessionId, CancellationToken ct)
     {
-        var session = await service.GetAsync(sessionId, ct);
+        var session = await service.GetSessionAsync(sessionId, ct);
         return Ok(SessionResponse.From(session));
     }
 
@@ -94,7 +94,7 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> FinishSession(Guid sessionId, CancellationToken ct)
     {
-        var session = await service.FinishAsync(sessionId, ct);
+        var session = await service.FinishSessionAsync(sessionId, ct);
         return Ok(SessionResponse.From(session));
     }
 }

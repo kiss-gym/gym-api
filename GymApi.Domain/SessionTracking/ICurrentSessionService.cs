@@ -6,12 +6,12 @@ namespace GymApi.Domain.SessionTracking;
 /// </summary>
 public interface ICurrentSessionService
 {
-    Task<TrainingSession> CreateAsync(
+    Task<TrainingSession> CreateSessionAsync(
         Guid userId,
         Guid? inheritFromSessionId = null,
         CancellationToken ct = default);
 
-    Task<TrainingSession> GetAsync(
+    Task<TrainingSession> GetSessionAsync(
         Guid sessionId,
         CancellationToken ct = default);
 
@@ -34,7 +34,7 @@ public interface ICurrentSessionService
         Guid exerciseId,
         CancellationToken ct = default);
 
-    Task<TrainingSession> FinishAsync(
+    Task<TrainingSession> FinishSessionAsync(
         Guid sessionId,
         CancellationToken ct = default);
 }

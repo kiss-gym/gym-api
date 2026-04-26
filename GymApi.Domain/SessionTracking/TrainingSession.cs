@@ -36,7 +36,7 @@ public sealed class TrainingSession
     /// <summary>Populates the session with exercises from a previous session as "pending".</summary>
     public void InheritFrom(TrainingSession previousSession)
     {
-        EnsureActive();
+        EnsureSessionIsActive();
 
         if (_exercises.Count != 0)
         {
@@ -58,8 +58,8 @@ public sealed class TrainingSession
         DateTimeOffset? maxEndAt,
         IEnumerable<ExerciseProperty>? properties = null)
     {
-        EnsureActive();
-        AutoFinishRunning();
+        EnsureSessionIsActive();
+        AutoFinishRunningExercise();
 
         var exercise = ExerciseEntry.CreatePending(autoLabel, photoUrl, properties);
         exercise.Start(maxEndAt);
@@ -70,7 +70,7 @@ public sealed class TrainingSession
     /// <summary>Starts a pending exercise (inherited from a previous session), auto-finishing any running exercise.</summary>
     public ExerciseEntry StartExercise(Guid exerciseId, DateTimeOffset? maxEndAt = null)
     {
-        EnsureActive();
+        EnsureSessionIsActive();
         var exercise = FindExercise(exerciseId);
 
         if (!exercise.IsPending)
@@ -78,27 +78,27 @@ public sealed class TrainingSession
             throw new InvalidOperationException($"Exercise {exerciseId} is not pending.");
         }
 
-        AutoFinishRunning();
+        AutoFinishRunningExercise();
         exercise.Start(maxEndAt);
         return exercise;
     }
 
     public void RemoveExercise(Guid exerciseId)
     {
-        EnsureActive();
+        EnsureSessionIsActive();
         _exercises.Remove(FindExercise(exerciseId));
     }
 
     /// <summary>Finishes the session. Auto-finishes any running exercise first.</summary>
     public void Finish()
     {
-        EnsureActive();
-        AutoFinishRunning();
+        EnsureSessionIsActive();
+        AutoFinishRunningExercise();
         Status = SessionStatus.Finished;
         FinishedAt = DateTimeOffset.UtcNow;
     }
 
-    private void EnsureActive()
+    private void EnsureSessionIsActive()
     {
         if (Status != SessionStatus.Active)
         {
@@ -106,7 +106,7 @@ public sealed class TrainingSession
         }
     }
 
-    private void AutoFinishRunning()
+    private void AutoFinishRunningExercise()
     {
         _exercises.FirstOrDefault(e => e.IsRunning)?.Finish();
     }

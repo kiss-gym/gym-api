@@ -6,7 +6,7 @@ namespace GymApi.Application.SessionTracking;
 public sealed class CurrentSessionService(ISessionRepository repository, IUserContext userContext)
     : ICurrentSessionService
 {
-    public async Task<TrainingSession> CreateAsync(
+    public async Task<TrainingSession> CreateSessionAsync(
         Guid userId,
         Guid? inheritFromSessionId = null,
         CancellationToken ct = default)
@@ -27,7 +27,7 @@ public sealed class CurrentSessionService(ISessionRepository repository, IUserCo
         return session;
     }
 
-    public async Task<TrainingSession> GetAsync(Guid sessionId, CancellationToken ct = default)
+    public async Task<TrainingSession> GetSessionAsync(Guid sessionId, CancellationToken ct = default)
     {
         var session = await repository.FindAsync(sessionId, ct)
                       ?? throw new KeyNotFoundException($"Session {sessionId} not found.");
@@ -49,7 +49,7 @@ public sealed class CurrentSessionService(ISessionRepository repository, IUserCo
         IEnumerable<ExerciseProperty>? properties = null,
         CancellationToken ct = default)
     {
-        var session = await GetAsync(sessionId, ct);
+        var session = await GetSessionAsync(sessionId, ct);
         var exercise = session.AddExercise(autoLabel, photoUrl, maxEndAt, properties);
         await repository.SaveAsync(session, ct);
         return exercise;
@@ -61,7 +61,7 @@ public sealed class CurrentSessionService(ISessionRepository repository, IUserCo
         DateTimeOffset? maxEndAt = null,
         CancellationToken ct = default)
     {
-        var session = await GetAsync(sessionId, ct);
+        var session = await GetSessionAsync(sessionId, ct);
         var exercise = session.StartExercise(exerciseId, maxEndAt);
         await repository.SaveAsync(session, ct);
         return exercise;
@@ -72,14 +72,14 @@ public sealed class CurrentSessionService(ISessionRepository repository, IUserCo
         Guid exerciseId,
         CancellationToken ct = default)
     {
-        var session = await GetAsync(sessionId, ct);
+        var session = await GetSessionAsync(sessionId, ct);
         session.RemoveExercise(exerciseId);
         await repository.SaveAsync(session, ct);
     }
 
-    public async Task<TrainingSession> FinishAsync(Guid sessionId, CancellationToken ct = default)
+    public async Task<TrainingSession> FinishSessionAsync(Guid sessionId, CancellationToken ct = default)
     {
-        var session = await GetAsync(sessionId, ct);
+        var session = await GetSessionAsync(sessionId, ct);
         session.Finish();
         await repository.SaveAsync(session, ct);
         return session;
