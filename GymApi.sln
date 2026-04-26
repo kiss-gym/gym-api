@@ -11,6 +11,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Etc", "Etc", "{A60CBFFB-F950-4A25-B1CD-486EEC2D1A64}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		LICENSE = LICENSE
+		README.md = README.md
+		Documents\InitialTask.txt = Documents\InitialTask.txt
 	EndProjectSection
 EndProject
 Global
