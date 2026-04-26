@@ -4,6 +4,13 @@ info:
   description: API for Kiss Gym - Session Tracking and User Management.
   version: v1
 paths:
+  /:
+    get:
+      tags:
+        - 'GymApi.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null'
+      responses:
+        '200':
+          description: OK
   /api/sessions:
     post:
       tags:
