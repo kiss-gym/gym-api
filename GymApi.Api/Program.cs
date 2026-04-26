@@ -1,6 +1,7 @@
 using GymApi.Api.Infrastructure;
 using GymApi.Application.SessionTracking;
 using GymApi.Domain.SessionTracking;
+using GymApi.Infrastructure.SessionTracking;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,7 +21,9 @@ builder.Services.AddSwaggerGen(c =>
 
 // Session Tracking (core subdomain)
 builder.Services.AddScoped<ICurrentSessionService, CurrentSessionService>();
-// ISessionRepository → registered when GymApi.Infrastructure (Supabase) project is added
+
+// Dependency Inversion: Injecting the Infrastructure implementation
+builder.Services.AddSingleton<ISessionRepository, InMemorySessionRepository>();
 
 builder.Services.AddTransient<ExceptionMiddleware>();
 

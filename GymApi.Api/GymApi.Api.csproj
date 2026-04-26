@@ -11,5 +11,6 @@
     <ItemGroup>
         <ProjectReference Include="..\GymApi.Domain\GymApi.Domain.csproj" />
         <ProjectReference Include="..\GymApi.Application\GymApi.Application.csproj" />
+        <ProjectReference Include="..\GymApi.Infrastructure\GymApi.Infrastructure.csproj" />
     </ItemGroup>
 </Project>
