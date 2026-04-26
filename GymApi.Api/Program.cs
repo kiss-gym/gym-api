@@ -13,13 +13,34 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Kiss Gym API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "Kiss Gym API", 
+        Version = "v1",
+        Description = "API for Kiss Gym - Session Tracking and User Management."
+    });
+    
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
     {
         c.IncludeXmlComments(xmlPath);
     }
+
+    c.TagActionsBy(api =>
+    {
+        if (api.GroupName != null) return new[] { api.GroupName };
+        
+        var controllerName = api.ActionDescriptor.RouteValues["controller"];
+        return controllerName switch
+        {
+            "SessionTracking" => new[] { "Sessions" },
+            "User" => new[] { "Users" },
+            _ => new[] { controllerName ?? "Default" }
+        };
+    });
+
+    c.DocInclusionPredicate((_, _) => true);
 });
 
 // User Management (generic subdomain)

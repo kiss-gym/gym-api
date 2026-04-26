@@ -1,0 +1,511 @@
+openapi: 3.0.1
+info:
+  title: Kiss Gym API
+  description: API for Kiss Gym - Session Tracking and User Management.
+  version: v1
+paths:
+  /api/sessions:
+    post:
+      tags:
+        - Sessions
+      summary: 'Create a new training session, optionally inheriting exercises.'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/sessions/{sessionId}':
+    get:
+      tags:
+        - Sessions
+      summary: Get a session by ID.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/sessions/{sessionId}/exercises':
+    post:
+      tags:
+        - Sessions
+      summary: "Add a new exercise to the session and start it immediately.\r\nAny currently running exercise is auto-finished."
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddExerciseRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/AddExerciseRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/AddExerciseRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/sessions/{sessionId}/exercises/{exerciseId}/start':
+    post:
+      tags:
+        - Sessions
+      summary: "Start a pending (inherited) exercise.\r\nAny currently running exercise is auto-finished."
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: exerciseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartExerciseRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/StartExerciseRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/StartExerciseRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/sessions/{sessionId}/exercises/{exerciseId}/finish':
+    post:
+      tags:
+        - Sessions
+      summary: Finish a running exercise.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: exerciseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/sessions/{sessionId}/exercises/{exerciseId}':
+    delete:
+      tags:
+        - Sessions
+      summary: Remove an exercise from an active session.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: exerciseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/sessions/{sessionId}/finish':
+    post:
+      tags:
+        - Sessions
+      summary: Finish the session. Any running exercise is auto-finished first.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/users/register:
+    post:
+      tags:
+        - Users
+      summary: Register a new user.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/users/login:
+    post:
+      tags:
+        - Users
+      summary: "Login a user (Mocked for development).\r\nSimulates authentication by associating the session with an email.\r\nSets the user context for subsequent requests.\r\nIn production, the client will authenticate directly with Supabase."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/users/me:
+    get:
+      tags:
+        - Users
+      summary: Get the current authenticated user profile.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+components:
+  schemas:
+    AddExerciseRequest:
+      type: object
+      properties:
+        autoLabel:
+          type: string
+          nullable: true
+        photoUrl:
+          type: string
+          nullable: true
+        maxEndAt:
+          type: string
+          format: date-time
+          nullable: true
+        properties:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExercisePropertyDto'
+          nullable: true
+      additionalProperties: false
+    CreateSessionRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        inheritFromSessionId:
+          type: string
+          format: uuid
+          nullable: true
+      additionalProperties: false
+    ExercisePropertyDto:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+        value:
+          type: string
+          nullable: true
+      additionalProperties: false
+    ExercisePropertyResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+        value:
+          type: string
+          nullable: true
+      additionalProperties: false
+    ExerciseResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        autoLabel:
+          type: string
+          nullable: true
+        photoUrl:
+          type: string
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        maxEndAt:
+          type: string
+          format: date-time
+          nullable: true
+        realEndAt:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          nullable: true
+        properties:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExercisePropertyResponse'
+          nullable: true
+      additionalProperties: false
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          nullable: true
+      additionalProperties: false
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        status:
+          type: integer
+          format: int32
+          nullable: true
+        detail:
+          type: string
+          nullable: true
+        instance:
+          type: string
+          nullable: true
+      additionalProperties: { }
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+      additionalProperties: false
+    SessionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          nullable: true
+        inheritedFromSessionId:
+          type: string
+          format: uuid
+          nullable: true
+        exercises:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExerciseResponse'
+          nullable: true
+      additionalProperties: false
+    StartExerciseRequest:
+      type: object
+      properties:
+        maxEndAt:
+          type: string
+          format: date-time
+          nullable: true
+      additionalProperties: false
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+      additionalProperties: false
