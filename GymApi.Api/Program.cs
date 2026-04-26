@@ -1,4 +1,5 @@
 using GymApi.Api.Infrastructure;
+using GymApi.Api.Infrastructure.Swagger;
 using GymApi.Application.SessionTracking;
 using GymApi.Application.UserManagement;
 using GymApi.Domain.SessionTracking;
@@ -27,10 +28,15 @@ builder.Services.AddSwaggerGen(c =>
         c.IncludeXmlComments(xmlPath);
     }
 
+    c.SchemaFilter<RequiredSchemaFilter>();
+
     c.TagActionsBy(api =>
     {
-        if (api.GroupName != null) return new[] { api.GroupName };
-        
+        if (api.GroupName != null)
+        {
+            return new[] { api.GroupName };
+        }
+
         var controllerName = api.ActionDescriptor.RouteValues["controller"];
         return controllerName switch
         {
@@ -63,6 +69,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ExceptionMiddleware>();
-app.UseHttpsRedirection();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.MapControllers();
 app.Run();

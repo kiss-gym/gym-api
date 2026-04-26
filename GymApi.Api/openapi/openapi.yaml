@@ -340,11 +340,12 @@ paths:
 components:
   schemas:
     AddExerciseRequest:
+      required:
+        - autoLabel
       type: object
       properties:
         autoLabel:
           type: string
-          nullable: true
         photoUrl:
           type: string
           nullable: true
@@ -359,6 +360,8 @@ components:
           nullable: true
       additionalProperties: false
     CreateSessionRequest:
+      required:
+        - userId
       type: object
       properties:
         userId:
@@ -370,14 +373,15 @@ components:
           nullable: true
       additionalProperties: false
     ExercisePropertyDto:
+      required:
+        - name
+        - value
       type: object
       properties:
         name:
           type: string
-          nullable: true
         value:
           type: string
-          nullable: true
       additionalProperties: false
     ExercisePropertyResponse:
       type: object
@@ -423,11 +427,12 @@ components:
           nullable: true
       additionalProperties: false
     LoginRequest:
+      required:
+        - email
       type: object
       properties:
         email:
           type: string
-          nullable: true
       additionalProperties: false
     ProblemDetails:
       type: object
@@ -450,14 +455,15 @@ components:
           nullable: true
       additionalProperties: { }
     RegisterRequest:
+      required:
+        - email
+        - name
       type: object
       properties:
         email:
           type: string
-          nullable: true
         name:
           type: string
-          nullable: true
       additionalProperties: false
     SessionResponse:
       type: object
