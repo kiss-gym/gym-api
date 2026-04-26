@@ -76,7 +76,7 @@ public sealed class CurrentSessionServiceTests
         var userId = Guid.NewGuid();
         var otherUserId = Guid.NewGuid();
         var session = TrainingSession.Create(userId);
-        
+
         _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
         _userContext.UserId.Returns(otherUserId);
         _userContext.IsAuthenticated.Returns(true);

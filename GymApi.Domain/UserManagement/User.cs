@@ -6,7 +6,9 @@ public sealed class User
     public string Email { get; private set; } = string.Empty;
     public string Name { get; private set; } = string.Empty;
 
-    private User() { }
+    private User()
+    {
+    }
 
     public static User Create(Guid id, string email, string name)
     {

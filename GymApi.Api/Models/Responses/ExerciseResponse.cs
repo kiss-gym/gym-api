@@ -14,13 +14,16 @@ public sealed record ExerciseResponse(
     string Status,
     IReadOnlyList<ExercisePropertyResponse> Properties)
 {
-    public static ExerciseResponse From(ExerciseEntry e) => new(
-        e.Id,
-        e.AutoLabel,
-        e.PhotoUrl,
-        e.StartedAt,
-        e.MaxEndAt,
-        e.RealEndAt,
-        e.IsPending ? "Pending" : e.IsRunning ? "Running" : "Finished",
-        e.Properties.Select(p => new ExercisePropertyResponse(p.Name, p.Value)).ToList());
+    public static ExerciseResponse From(ExerciseEntry e)
+    {
+        return new ExerciseResponse(
+            e.Id,
+            e.AutoLabel,
+            e.PhotoUrl,
+            e.StartedAt,
+            e.MaxEndAt,
+            e.RealEndAt,
+            e.IsPending ? "Pending" : e.IsRunning ? "Running" : "Finished",
+            e.Properties.Select(p => new ExercisePropertyResponse(p.Name, p.Value)).ToList());
+    }
 }

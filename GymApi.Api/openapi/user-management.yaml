@@ -7,7 +7,7 @@ info:
 paths:
   /api/users/register:
     post:
-      tags: [Users]
+      tags: [ Users ]
       operationId: registerUser
       summary: Register a new user
       requestBody:
@@ -28,7 +28,7 @@ paths:
 
   /api/users/login:
     post:
-      tags: [Users]
+      tags: [ Users ]
       operationId: login
       summary: Login a user (Mocked for development)
       description: |
@@ -55,7 +55,7 @@ paths:
 
   /api/users/me:
     get:
-      tags: [Users]
+      tags: [ Users ]
       operationId: getCurrentUser
       summary: Get the current authenticated user profile
       responses:
@@ -80,7 +80,7 @@ components:
   schemas:
     RegisterRequest:
       type: object
-      required: [email, name]
+      required: [ email, name ]
       properties:
         email:
           type: string
@@ -90,7 +90,7 @@ components:
 
     LoginRequest:
       type: object
-      required: [email]
+      required: [ email ]
       properties:
         email:
           type: string
@@ -98,7 +98,7 @@ components:
 
     UserResponse:
       type: object
-      required: [id, email, name]
+      required: [ id, email, name ]
       properties:
         id:
           type: string
@@ -111,7 +111,7 @@ components:
 
     ErrorResponse:
       type: object
-      required: [error]
+      required: [ error ]
       properties:
         error:
           type: string

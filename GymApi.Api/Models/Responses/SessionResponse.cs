@@ -11,12 +11,15 @@ public sealed record SessionResponse(
     Guid? InheritedFromSessionId,
     IReadOnlyList<ExerciseResponse> Exercises)
 {
-    public static SessionResponse From(TrainingSession s) => new(
-        s.Id,
-        s.UserId,
-        s.CreatedAt,
-        s.FinishedAt,
-        s.Status.ToString(),
-        s.InheritedFromSessionId,
-        s.Exercises.Select(ExerciseResponse.From).ToList());
+    public static SessionResponse From(TrainingSession s)
+    {
+        return new SessionResponse(
+            s.Id,
+            s.UserId,
+            s.CreatedAt,
+            s.FinishedAt,
+            s.Status.ToString(),
+            s.InheritedFromSessionId,
+            s.Exercises.Select(ExerciseResponse.From).ToList());
+    }
 }

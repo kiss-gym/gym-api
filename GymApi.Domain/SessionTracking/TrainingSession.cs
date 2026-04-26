@@ -17,7 +17,9 @@ public sealed class TrainingSession
     private readonly List<ExerciseEntry> _exercises = [];
     public IReadOnlyList<ExerciseEntry> Exercises => _exercises.AsReadOnly();
 
-    private TrainingSession() { }
+    private TrainingSession()
+    {
+    }
 
     /// <summary>Creates a new, empty active session.</summary>
     public static TrainingSession Create(Guid userId)
@@ -104,10 +106,14 @@ public sealed class TrainingSession
         }
     }
 
-    private void AutoFinishRunning() =>
+    private void AutoFinishRunning()
+    {
         _exercises.FirstOrDefault(e => e.IsRunning)?.Finish();
+    }
 
-    private ExerciseEntry FindExercise(Guid exerciseId) =>
-        _exercises.FirstOrDefault(e => e.Id == exerciseId)
-        ?? throw new KeyNotFoundException($"Exercise {exerciseId} not found in session {Id}.");
+    private ExerciseEntry FindExercise(Guid exerciseId)
+    {
+        return _exercises.FirstOrDefault(e => e.Id == exerciseId)
+               ?? throw new KeyNotFoundException($"Exercise {exerciseId} not found in session {Id}.");
+    }
 }

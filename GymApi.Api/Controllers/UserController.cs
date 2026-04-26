@@ -11,8 +11,8 @@ namespace GymApi.Api.Controllers;
 [Route("api/users")]
 [Produces("application/json")]
 public sealed class UserController(
-    IUserService userService, 
-    IUserRepository userRepository, 
+    IUserService userService,
+    IUserRepository userRepository,
     IUserContext userContext) : ControllerBase
 {
     [HttpPost("register")]
@@ -30,7 +30,10 @@ public sealed class UserController(
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken ct)
     {
         var user = await userRepository.GetByEmailAsync(request.Email, ct);
-        if (user == null) return NotFound("User not found.");
+        if (user == null)
+        {
+            return NotFound("User not found.");
+        }
 
         if (userContext is MockUserContext mock)
         {
@@ -44,7 +47,11 @@ public sealed class UserController(
     public async Task<IActionResult> GetMe(CancellationToken ct)
     {
         var user = await userService.GetCurrentUserAsync(ct);
-        if (user == null) return Unauthorized();
+        if (user == null)
+        {
+            return Unauthorized();
+        }
+
         return Ok(UserResponse.From(user));
     }
 }

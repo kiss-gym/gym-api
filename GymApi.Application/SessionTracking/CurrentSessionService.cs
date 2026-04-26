@@ -3,7 +3,8 @@ using GymApi.Domain.UserManagement;
 
 namespace GymApi.Application.SessionTracking;
 
-public sealed class CurrentSessionService(ISessionRepository repository, IUserContext userContext) : ICurrentSessionService
+public sealed class CurrentSessionService(ISessionRepository repository, IUserContext userContext)
+    : ICurrentSessionService
 {
     public async Task<TrainingSession> CreateAsync(
         Guid userId,
@@ -29,8 +30,8 @@ public sealed class CurrentSessionService(ISessionRepository repository, IUserCo
     public async Task<TrainingSession> GetAsync(Guid sessionId, CancellationToken ct = default)
     {
         var session = await repository.FindAsync(sessionId, ct)
-               ?? throw new KeyNotFoundException($"Session {sessionId} not found.");
-        
+                      ?? throw new KeyNotFoundException($"Session {sessionId} not found.");
+
         // Authorization check: User can only access their own sessions
         if (userContext.IsAuthenticated && session.UserId != userContext.UserId)
         {

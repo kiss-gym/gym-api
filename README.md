@@ -1,10 +1,13 @@
 # Kiss Gym API
 
-Kiss Gym is a freeware gym training tracker focused on simplicity and flexibility. It prioritizes ad-hoc training sessions over rigid planning.
+Kiss Gym is a freeware gym training tracker focused on simplicity and flexibility. It prioritizes ad-hoc training
+sessions over rigid planning.
 
 ## Intention
 
-The project aims to provide a lightweight backend for gym tracking where training plans are emergent rather than prescribed. Each session inherits the sequence of exercises from the previous one, allowing for natural progression without the overhead of explicit plan management.
+The project aims to provide a lightweight backend for gym tracking where training plans are emergent rather than
+prescribed. Each session inherits the sequence of exercises from the previous one, allowing for natural progression
+without the overhead of explicit plan management.
 
 ## Architecture
 
@@ -57,6 +60,7 @@ gymApiBackend -->|RESTful API / OpenAPI| consumerClients
 - **Frontend (Secondary):** React / Next.js.
 
 ### Bounded Contexts
+
 - **Current Session Tracking (Core):** Real-time tracking of the active session.
 - **Session Management (Supporting):** Historical data, editing, and deletion.
 - **Exercise Library (Supporting):** Management of exercises, media, and custom properties.
@@ -69,10 +73,10 @@ gymApiBackend -->|RESTful API / OpenAPI| consumerClients
 - **API First:** Fully documented via OpenAPI for seamless frontend integration.
 - **Coming Soon:** Calendar planning and reminders.
 
-
 ## Developer Build
 
 ### Requirements
+
 - **.NET 10.0 SDK** or higher.
 - **Supabase** instance (local or cloud).
 - **IDE:** Visual Studio 2026, JetBrains Rider, or VS Code.
@@ -98,6 +102,7 @@ gymApiBackend -->|RESTful API / OpenAPI| consumerClients
 ## Run Tests
 
 Execute the test suite using the .NET CLI:
+
 ```bash
 dotnet test
 ```

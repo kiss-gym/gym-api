@@ -19,7 +19,7 @@ public sealed class InMemorySessionRepositoryTests
     public async Task SaveAndFind_WorkCorrectly()
     {
         var session = TrainingSession.Create(Guid.NewGuid());
-        
+
         await _repository.SaveAsync(session);
         var found = await _repository.FindAsync(session.Id);
 

@@ -67,7 +67,7 @@ public class UserServiceTests
         _repoMock.GetByEmailAsync("exists@test.com", Arg.Any<CancellationToken>())
             .Returns(existing);
 
-        Assert.That(async () => await _service.RegisterAsync("exists@test.com", "Any"), 
+        Assert.That(async () => await _service.RegisterAsync("exists@test.com", "Any"),
             Throws.TypeOf<InvalidOperationException>());
     }
 }

@@ -19,7 +19,7 @@ public sealed class InMemorySessionRepository : ISessionRepository
             .Where(s => s.UserId == userId)
             .OrderByDescending(s => s.CreatedAt)
             .FirstOrDefault();
-            
+
         return Task.FromResult(latest);
     }
 

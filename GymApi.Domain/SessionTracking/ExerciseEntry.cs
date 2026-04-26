@@ -19,24 +19,31 @@ public sealed class ExerciseEntry
     public bool IsRunning => StartedAt is not null && RealEndAt is null;
     public bool IsFinished => RealEndAt is not null;
 
-    private ExerciseEntry() { }
+    private ExerciseEntry()
+    {
+    }
 
     internal static ExerciseEntry CreatePending(
         string autoLabel,
         string? photoUrl,
-        IEnumerable<ExerciseProperty>? properties = null) =>
-        new()
+        IEnumerable<ExerciseProperty>? properties = null)
+    {
+        return new ExerciseEntry
         {
             Id = Guid.NewGuid(),
             AutoLabel = autoLabel,
             PhotoUrl = photoUrl,
             Properties = properties?.ToList() ?? []
         };
+    }
 
     internal void Start(DateTimeOffset? maxEndAt = null)
     {
         if (!IsPending)
+        {
             throw new InvalidOperationException($"Exercise '{AutoLabel}' is not pending.");
+        }
+
         StartedAt = DateTimeOffset.UtcNow;
         MaxEndAt = maxEndAt;
     }
@@ -44,6 +51,8 @@ public sealed class ExerciseEntry
     internal void Finish()
     {
         if (IsRunning)
+        {
             RealEndAt = DateTimeOffset.UtcNow;
+        }
     }
 }

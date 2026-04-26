@@ -18,7 +18,7 @@ paths:
 
   /api/sessions:
     post:
-      tags: [Sessions]
+      tags: [ Sessions ]
       operationId: createSession
       summary: Create a new training session
       description: |
@@ -45,7 +45,7 @@ paths:
 
   /api/sessions/{sessionId}:
     get:
-      tags: [Sessions]
+      tags: [ Sessions ]
       operationId: getSession
       summary: Get a session by ID
       parameters:
@@ -62,7 +62,7 @@ paths:
 
   /api/sessions/{sessionId}/exercises:
     post:
-      tags: [Sessions]
+      tags: [ Sessions ]
       operationId: addExercise
       summary: Add and immediately start a new exercise
       description: |
@@ -101,7 +101,7 @@ paths:
 
   /api/sessions/{sessionId}/exercises/{exerciseId}/start:
     post:
-      tags: [Sessions]
+      tags: [ Sessions ]
       operationId: startExercise
       summary: Start a pending (inherited) exercise
       description: |
@@ -131,7 +131,7 @@ paths:
 
   /api/sessions/{sessionId}/exercises/{exerciseId}:
     delete:
-      tags: [Sessions]
+      tags: [ Sessions ]
       operationId: removeExercise
       summary: Remove an exercise from an active session
       parameters:
@@ -147,7 +147,7 @@ paths:
 
   /api/sessions/{sessionId}/finish:
     post:
-      tags: [Sessions]
+      tags: [ Sessions ]
       operationId: finishSession
       summary: Finish the training session
       description: |
@@ -211,7 +211,7 @@ components:
 
     CreateSessionRequest:
       type: object
-      required: [userId]
+      required: [ userId ]
       properties:
         userId:
           type: string
@@ -227,7 +227,7 @@ components:
 
     AddExerciseRequest:
       type: object
-      required: [autoLabel]
+      required: [ autoLabel ]
       properties:
         autoLabel:
           type: string
@@ -261,7 +261,7 @@ components:
 
     ExercisePropertyDto:
       type: object
-      required: [name, value]
+      required: [ name, value ]
       properties:
         name:
           type: string
@@ -274,7 +274,7 @@ components:
 
     SessionResponse:
       type: object
-      required: [id, userId, createdAt, status, exercises]
+      required: [ id, userId, createdAt, status, exercises ]
       properties:
         id:
           type: string
@@ -291,7 +291,7 @@ components:
           nullable: true
         status:
           type: string
-          enum: [Active, Finished]
+          enum: [ Active, Finished ]
         inheritedFromSessionId:
           type: string
           format: uuid
@@ -303,7 +303,7 @@ components:
 
     ExerciseResponse:
       type: object
-      required: [id, autoLabel, status, properties]
+      required: [ id, autoLabel, status, properties ]
       properties:
         id:
           type: string
@@ -330,7 +330,7 @@ components:
           description: Null until the exercise is finished.
         status:
           type: string
-          enum: [Pending, Running, Finished]
+          enum: [ Pending, Running, Finished ]
           description: |
             - **Pending** – inherited template, not yet started
             - **Running** – started, no end time yet
@@ -342,7 +342,7 @@ components:
 
     ErrorResponse:
       type: object
-      required: [error]
+      required: [ error ]
       properties:
         error:
           type: string
