@@ -129,6 +129,28 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
 
+  /api/sessions/{sessionId}/exercises/{exerciseId}/finish:
+    post:
+      tags: [ Sessions ]
+      operationId: finishExercise
+      summary: Finish a running exercise
+      description: |
+        Transitions a running exercise to `Finished` state.
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/ExerciseId'
+      responses:
+        '200':
+          description: Exercise finished
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
   /api/sessions/{sessionId}/exercises/{exerciseId}:
     delete:
       tags: [ Sessions ]

@@ -83,6 +83,20 @@ public sealed class TrainingSession
         return exercise;
     }
 
+    /// <summary>Finishes a specific running exercise.</summary>
+    public void FinishExercise(Guid exerciseId)
+    {
+        EnsureSessionIsActive();
+        var exercise = FindExercise(exerciseId);
+
+        if (!exercise.IsRunning)
+        {
+            throw new InvalidOperationException($"Exercise {exerciseId} is not running.");
+        }
+
+        exercise.Finish();
+    }
+
     public void RemoveExercise(Guid exerciseId)
     {
         EnsureSessionIsActive();

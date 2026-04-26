@@ -155,4 +155,20 @@ public sealed class CurrentSessionServiceTests
         await _repository.Received(1).SaveAsync(session, Arg.Any<CancellationToken>());
         Assert.That(result.IsRunning, Is.True);
     }
+
+    [Test]
+    public async Task FinishExerciseAsync_FinishesRunningExerciseAndPersists()
+    {
+        var userId = Guid.NewGuid();
+        var session = TrainingSession.Create(userId);
+        var exercise = session.AddExercise("Push-up", null, null); // This starts the exercise
+        _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
+        _userContext.UserId.Returns(userId);
+        _userContext.IsAuthenticated.Returns(true);
+
+        var result = await _service.FinishExerciseAsync(session.Id, exercise.Id);
+
+        await _repository.Received(1).SaveAsync(session, Arg.Any<CancellationToken>());
+        Assert.That(result.IsFinished, Is.True);
+    }
 }

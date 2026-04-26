@@ -67,6 +67,18 @@ public sealed class CurrentSessionService(ISessionRepository repository, IUserCo
         return exercise;
     }
 
+    public async Task<ExerciseEntry> FinishExerciseAsync(
+        Guid sessionId,
+        Guid exerciseId,
+        CancellationToken ct = default)
+    {
+        var session = await GetSessionAsync(sessionId, ct);
+        session.FinishExercise(exerciseId);
+        var exercise = session.Exercises.First(e => e.Id == exerciseId);
+        await repository.SaveAsync(session, ct);
+        return exercise;
+    }
+
     public async Task RemoveExerciseAsync(
         Guid sessionId,
         Guid exerciseId,

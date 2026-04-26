@@ -29,6 +29,11 @@ public interface ICurrentSessionService
         DateTimeOffset? maxEndAt = null,
         CancellationToken ct = default);
 
+    Task<ExerciseEntry> FinishExerciseAsync(
+        Guid sessionId,
+        Guid exerciseId,
+        CancellationToken ct = default);
+
     Task RemoveExerciseAsync(
         Guid sessionId,
         Guid exerciseId,

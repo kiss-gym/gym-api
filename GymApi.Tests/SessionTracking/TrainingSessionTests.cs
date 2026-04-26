@@ -137,6 +137,27 @@ public sealed class TrainingSessionTests
     }
 
     [Test]
+    public void FinishExercise_FinishesRunningExercise()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Push-up", null, null);
+
+        session.FinishExercise(exercise.Id);
+
+        Assert.That(exercise.IsFinished, Is.True);
+    }
+
+    [Test]
+    public void FinishExercise_OnNotRunningExercise_ThrowsInvalidOperationException()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Push-up", null, null);
+        session.FinishExercise(exercise.Id);
+
+        Assert.Throws<InvalidOperationException>(() => session.FinishExercise(exercise.Id));
+    }
+
+    [Test]
     public void AddExercise_SetsMaxEndAt_WhenProvided()
     {
         var session = TrainingSession.Create(_anyUser);

@@ -75,6 +75,20 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
         return Ok(ExerciseResponse.From(exercise));
     }
 
+    /// <summary>Finish a running exercise.</summary>
+    [HttpPost("{sessionId:guid}/exercises/{exerciseId:guid}/finish")]
+    [ProducesResponseType<ExerciseResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> FinishExercise(
+        Guid sessionId,
+        Guid exerciseId,
+        CancellationToken ct)
+    {
+        var exercise = await service.FinishExerciseAsync(sessionId, exerciseId, ct);
+        return Ok(ExerciseResponse.From(exercise));
+    }
+
     /// <summary>Remove an exercise from an active session.</summary>
     [HttpDelete("{sessionId:guid}/exercises/{exerciseId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
