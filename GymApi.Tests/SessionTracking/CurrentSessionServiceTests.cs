@@ -10,13 +10,13 @@ namespace GymApi.Tests.SessionTracking;
 public sealed class CurrentSessionServiceTests
 {
     private ISessionRepository _repository = null!;
-    private CurrentSessionService _sut = null!;
+    private CurrentSessionService _service = null!;
 
     [SetUp]
     public void SetUp()
     {
         _repository = Substitute.For<ISessionRepository>();
-        _sut = new CurrentSessionService(_repository);
+        _service = new CurrentSessionService(_repository);
     }
 
     [Test]
@@ -24,7 +24,7 @@ public sealed class CurrentSessionServiceTests
     {
         var userId = Guid.NewGuid();
 
-        var result = await _sut.CreateAsync(userId);
+        var result = await _service.CreateAsync(userId);
 
         await _repository.Received(1).SaveAsync(
             Arg.Is<TrainingSession>(s => s.UserId == userId && s.Status == SessionStatus.Active),
@@ -48,7 +48,7 @@ public sealed class CurrentSessionServiceTests
 
         _repository.FindAsync(previous.Id, Arg.Any<CancellationToken>()).Returns(previous);
 
-        var result = await _sut.CreateAsync(userId, previous.Id);
+        var result = await _service.CreateAsync(userId, previous.Id);
 
         Assert.Multiple(() =>
         {
@@ -64,7 +64,7 @@ public sealed class CurrentSessionServiceTests
     {
         _repository.FindAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).ReturnsNull();
 
-        Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.GetAsync(Guid.NewGuid()));
+        Assert.ThrowsAsync<KeyNotFoundException>(() => _service.GetAsync(Guid.NewGuid()));
     }
 
     [Test]
@@ -73,7 +73,7 @@ public sealed class CurrentSessionServiceTests
         var session = TrainingSession.Create(Guid.NewGuid());
         _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
 
-        var result = await _sut.AddExerciseAsync(session.Id, "Bench Press", null, null);
+        var result = await _service.AddExerciseAsync(session.Id, "Bench Press", null, null);
 
         await _repository.Received(1).SaveAsync(session, Arg.Any<CancellationToken>());
         Assert.Multiple(() =>
@@ -90,7 +90,7 @@ public sealed class CurrentSessionServiceTests
         var exercise = session.AddExercise("Dip", null, null);
         _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
 
-        await _sut.RemoveExerciseAsync(session.Id, exercise.Id);
+        await _service.RemoveExerciseAsync(session.Id, exercise.Id);
 
         await _repository.Received(1).SaveAsync(session, Arg.Any<CancellationToken>());
         Assert.That(session.Exercises, Is.Empty);
@@ -102,7 +102,7 @@ public sealed class CurrentSessionServiceTests
         var session = TrainingSession.Create(Guid.NewGuid());
         _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
 
-        var result = await _sut.FinishAsync(session.Id);
+        var result = await _service.FinishAsync(session.Id);
 
         await _repository.Received(1).SaveAsync(session, Arg.Any<CancellationToken>());
         Assert.That(result.Status, Is.EqualTo(SessionStatus.Finished));
@@ -121,7 +121,7 @@ public sealed class CurrentSessionServiceTests
         var pendingId = session.Exercises[0].Id;
         _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
 
-        var result = await _sut.StartExerciseAsync(session.Id, pendingId);
+        var result = await _service.StartExerciseAsync(session.Id, pendingId);
 
         await _repository.Received(1).SaveAsync(session, Arg.Any<CancellationToken>());
         Assert.That(result.IsRunning, Is.True);

@@ -1,6 +1,36 @@
-I'd like to make an draft architecture for gym training (freeware), where each training session, a sequence of exercise (exercise: picture or foto, start / max end / real end time, automatic label, ad-hoc-defined custom name/value property list) can be inherited by the next training sequence (no explicit training plans). Workflow, Logic : It must be easy to access / edit / delete existing sessions, and inherit the latest to create a new one (current). My cloud platform would be Azure Container Apps, the full app logic RESTful (ASP.NET Core C# with OpenAPI aka Swagger. For database and Auth-engine I'd use supabase. The primary client is a React Native Expo Android app, the secondary is React /next.js. Features coming next: Calender planning and reminders. I'd like to use DDD (partially). I see the following Bounded Contexts: Current Session Tracking (core subdomain), Session Management (important supporting subdomain), User management (generic subdomain), Exercise Library (supporting subdomain). Let's begin with Training Tracking (core subdomain). The use case is: Create Session, Add/Start exercise (each exercise finishes previous and can be autofinished), Remove exercise, Finish session. Your task-1 is: suggest a C# project structure that contains:
+I'd like to make an draft architecture for gym training (freeware),
+where each training session, a sequence of exercise (exercise:
+picture or foto, start / max end / real end time, automatic label,
+ad-hoc-defined custom name/value property list) can be inherited by the next training sequence
+(no explicit training plans).
+
+Workflow, Logic : It must be easy to access / edit / delete existing sessions,
+and inherit the latest to create a new one (current).
+
+My cloud platform would be Azure Container Apps, the full app logic RESTful (ASP.NET Core C# with OpenAPI aka Swagger.
+
+For database and Auth-engine I'd use supabase. The primary client is a React Native Expo Android app, the secondary is React /next.js.
+
+Features coming next: Calender planning and reminders.
+
+I'd like to use DDD (partially).
+I see the following Bounded Contexts:
+- Current Session Tracking (core subdomain),
+- Session Management (important supporting subdomain),
+- User management (generic subdomain),
+- Exercise Library (supporting subdomain).
+
+We begun with Training Tracking (core subdomain).
+The use case is:
+- Create Session,
+- Add/Start exercise (each exercise finishes previous and can be autofinished),
+- Remove exercise,
+- Finish session.
+
+Your task-1 was: suggest a C# project structure that contains:
 - simple C# interface 
 - Unit Tests for C# interface (use NUnit)
 - the covering OpenAPI definitions
 - OpenAPI implementation
-Always follow SOLID and KISS
+Always following SOLID and KISS.
+Task 1 is done.

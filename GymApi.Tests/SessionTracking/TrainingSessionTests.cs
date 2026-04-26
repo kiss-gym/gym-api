@@ -6,12 +6,12 @@ namespace GymApi.Tests.SessionTracking;
 [TestFixture]
 public sealed class TrainingSessionTests
 {
-    private static readonly Guid AnyUser = Guid.NewGuid();
+    private static readonly Guid _anyUser = Guid.NewGuid();
 
     [Test]
     public void AddExercise_AutoFinishesPreviousRunningExercise()
     {
-        var session = TrainingSession.Create(AnyUser);
+        var session = TrainingSession.Create(_anyUser);
         session.AddExercise("Push-up", null, null);
         session.AddExercise("Pull-up", null, null);
 
@@ -25,7 +25,7 @@ public sealed class TrainingSessionTests
     [Test]
     public void AddExercise_OnFinishedSession_ThrowsInvalidOperationException()
     {
-        var session = TrainingSession.Create(AnyUser);
+        var session = TrainingSession.Create(_anyUser);
         session.Finish();
 
         Assert.Throws<InvalidOperationException>(() => session.AddExercise("Squat", null, null));
@@ -34,7 +34,7 @@ public sealed class TrainingSessionTests
     [Test]
     public void Finish_SetsStatusFinishedAndRecordsTimestamp()
     {
-        var session = TrainingSession.Create(AnyUser);
+        var session = TrainingSession.Create(_anyUser);
         session.Finish();
 
         Assert.Multiple(() =>
@@ -47,7 +47,7 @@ public sealed class TrainingSessionTests
     [Test]
     public void Finish_AutoFinishesRunningExercise()
     {
-        var session = TrainingSession.Create(AnyUser);
+        var session = TrainingSession.Create(_anyUser);
         session.AddExercise("Deadlift", null, null);
         session.Finish();
 
@@ -57,7 +57,7 @@ public sealed class TrainingSessionTests
     [Test]
     public void Finish_OnAlreadyFinishedSession_ThrowsInvalidOperationException()
     {
-        var session = TrainingSession.Create(AnyUser);
+        var session = TrainingSession.Create(_anyUser);
         session.Finish();
 
         Assert.Throws<InvalidOperationException>(() => session.Finish());
@@ -66,7 +66,7 @@ public sealed class TrainingSessionTests
     [Test]
     public void RemoveExercise_RemovesItFromList()
     {
-        var session = TrainingSession.Create(AnyUser);
+        var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Lunge", null, null);
         session.RemoveExercise(exercise.Id);
 
@@ -76,7 +76,7 @@ public sealed class TrainingSessionTests
     [Test]
     public void RemoveExercise_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var session = TrainingSession.Create(AnyUser);
+        var session = TrainingSession.Create(_anyUser);
 
         Assert.Throws<KeyNotFoundException>(() => session.RemoveExercise(Guid.NewGuid()));
     }
@@ -84,12 +84,12 @@ public sealed class TrainingSessionTests
     [Test]
     public void InheritFrom_CopiesExercisesAsPending()
     {
-        var previous = TrainingSession.Create(AnyUser);
+        var previous = TrainingSession.Create(_anyUser);
         previous.AddExercise("Bench Press", "http://img/bench.jpg", null,
             [new ExerciseProperty("Weight", "80kg"), new ExerciseProperty("Reps", "8")]);
         previous.Finish();
 
-        var next = TrainingSession.Create(AnyUser);
+        var next = TrainingSession.Create(_anyUser);
         next.InheritFrom(previous);
 
         Assert.Multiple(() =>
@@ -106,12 +106,12 @@ public sealed class TrainingSessionTests
     [Test]
     public void StartExercise_StartsPendingInheritedExercise_AutoFinishesPrevious()
     {
-        var previous = TrainingSession.Create(AnyUser);
+        var previous = TrainingSession.Create(_anyUser);
         previous.AddExercise("OHP", null, null);
         previous.AddExercise("Row", null, null);
         previous.Finish();
 
-        var session = TrainingSession.Create(AnyUser);
+        var session = TrainingSession.Create(_anyUser);
         session.InheritFrom(previous);
 
         var first = session.Exercises[0];
@@ -130,7 +130,7 @@ public sealed class TrainingSessionTests
     [Test]
     public void StartExercise_OnAlreadyRunningExercise_ThrowsInvalidOperationException()
     {
-        var session = TrainingSession.Create(AnyUser);
+        var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null, null);
 
         Assert.Throws<InvalidOperationException>(() => session.StartExercise(exercise.Id));
@@ -139,7 +139,7 @@ public sealed class TrainingSessionTests
     [Test]
     public void AddExercise_SetsMaxEndAt_WhenProvided()
     {
-        var session = TrainingSession.Create(AnyUser);
+        var session = TrainingSession.Create(_anyUser);
         var maxEnd = DateTimeOffset.UtcNow.AddMinutes(5);
 
         var exercise = session.AddExercise("Plank", null, maxEnd);
