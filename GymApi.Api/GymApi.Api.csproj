@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <!-- AOT removed: MVC controllers require reflection. Re-enable only with minimal APIs + source gen. -->
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.1" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\GymApi.Domain\GymApi.Domain.csproj" />
+        <ProjectReference Include="..\GymApi.Application\GymApi.Application.csproj" />
+    </ItemGroup>
+</Project>
