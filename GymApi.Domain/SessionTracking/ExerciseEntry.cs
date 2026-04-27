@@ -8,6 +8,7 @@ namespace GymApi.Domain.SessionTracking;
 /// Pending state only exists for exercises inherited from a previous session.
 /// </summary>
 [GenerateSerializer]
+[Alias("GymApi.Domain.SessionTracking.ExerciseEntry")]
 public sealed class ExerciseEntry
 {
     [Id(0)] public Guid Id { get; private set; }

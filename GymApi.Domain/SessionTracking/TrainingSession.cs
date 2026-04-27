@@ -8,6 +8,7 @@ namespace GymApi.Domain.SessionTracking;
 /// New exercises auto-finish the previous running one.
 /// </summary>
 [GenerateSerializer]
+[Alias("GymApi.Domain.SessionTracking.TrainingSession")]
 public sealed class TrainingSession
 {
     [Id(0)] public Guid Id { get; private init; }
