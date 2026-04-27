@@ -6,7 +6,6 @@ namespace GymApi.Application.SessionTracking;
 
 public sealed class CurrentSessionService(
     IGrainFactory grainFactory, 
-    ISessionRepository repository,
     IUserContext userContext)
     : ICurrentSessionService
 {
@@ -16,16 +15,20 @@ public sealed class CurrentSessionService(
         CancellationToken ct = default)
     {
         var sessionId = Guid.NewGuid();
-        var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
+        var sessionGrain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
 
         TrainingSession? previous = null;
         if (inheritFromSessionId.HasValue)
         {
-            previous = await repository.FindAsync(inheritFromSessionId.Value, ct);
+            var previousGrain = grainFactory.GetGrain<ITrainingSessionGrain>(inheritFromSessionId.Value);
+            previous = await previousGrain.GetStateAsync();
         }
 
-        var state = await grain.InitializeAsync(userId, previous);
-        await repository.SaveAsync(state, ct); 
+        var state = await sessionGrain.InitializeAsync(userId, previous);
+        
+        // Update User index
+        var userGrain = grainFactory.GetGrain<IUserGrain>(userId);
+        await userGrain.SetLatestSessionAsync(sessionId);
         
         return state;
     }
@@ -52,9 +55,7 @@ public sealed class CurrentSessionService(
         CancellationToken ct = default)
     {
         var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
-        var (entry, state) = await grain.AddExerciseAsync(autoLabel, photoUrl, maxEndAt, properties);
-        
-        await repository.SaveAsync(state, ct);
+        var (entry, _) = await grain.AddExerciseAsync(autoLabel, photoUrl, maxEndAt, properties);
         return entry;
     }
 
@@ -65,9 +66,7 @@ public sealed class CurrentSessionService(
         CancellationToken ct = default)
     {
         var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
-        var (entry, state) = await grain.StartExerciseAsync(exerciseId, maxEndAt);
-        
-        await repository.SaveAsync(state, ct);
+        var (entry, _) = await grain.StartExerciseAsync(exerciseId, maxEndAt);
         return entry;
     }
 
@@ -78,8 +77,6 @@ public sealed class CurrentSessionService(
     {
         var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
         var state = await grain.FinishExerciseAsync(exerciseId);
-        
-        await repository.SaveAsync(state, ct);
         return state.Exercises.First(e => e.Id == exerciseId);
     }
 
@@ -89,15 +86,12 @@ public sealed class CurrentSessionService(
         CancellationToken ct = default)
     {
         var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
-        var state = await grain.RemoveExerciseAsync(exerciseId);
-        await repository.SaveAsync(state, ct);
+        await grain.RemoveExerciseAsync(exerciseId);
     }
 
     public async Task<TrainingSession> FinishSessionAsync(Guid sessionId, CancellationToken ct = default)
     {
         var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
-        var state = await grain.FinishAsync();
-        await repository.SaveAsync(state, ct);
-        return state;
+        return await grain.FinishAsync();
     }
 }

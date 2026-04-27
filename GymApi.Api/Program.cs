@@ -7,8 +7,16 @@ using GymApi.Domain.UserManagement;
 using GymApi.Infrastructure.SessionTracking;
 using GymApi.Infrastructure.UserManagement;
 using Microsoft.OpenApi.Models;
+using Orleans.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Orleans Silo
+builder.Host.UseOrleans(siloBuilder =>
+{
+    siloBuilder.UseLocalhostClustering();
+    siloBuilder.AddMemoryGrainStorage("sessionStore");
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -56,7 +64,7 @@ builder.Services.AddScoped<IUserContext, MockUserContext>();
 
 // Session Tracking (core subdomain)
 builder.Services.AddScoped<ICurrentSessionService, CurrentSessionService>();
-builder.Services.AddSingleton<ISessionRepository, InMemorySessionRepository>();
+// ISessionRepository removed - Orleans is now the primary store
 
 builder.Services.AddTransient<ExceptionMiddleware>();
 
@@ -75,7 +83,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-// Root endpoint: Combined HTML view for humans and JSON for machines/probes
+// Root endpoint
 app.MapGet("/", (HttpContext context) =>
 {
     var info = new
@@ -87,7 +95,6 @@ app.MapGet("/", (HttpContext context) =>
         Docs = "/swagger"
     };
 
-    // If request asks for HTML (browser), give them a simple landing page
     if (context.Request.Headers.Accept.Any(h => h != null && h.Contains("text/html")))
     {
         return Results.Content(
@@ -101,7 +108,6 @@ app.MapGet("/", (HttpContext context) =>
             $"</body></html>", "text/html");
     }
 
-    // Otherwise (curl, HttpClient, etc.), return JSON
     return Results.Ok(info);
 });
 
