@@ -1,8 +1,7 @@
 namespace GymApi.Domain.SessionTracking;
 
 /// <summary>
-/// Application port for the Current Session Tracking bounded context.
-/// All mutation operations persist via ISessionRepository.
+/// Domain-level abstraction for a training session service.
 /// </summary>
 public interface ICurrentSessionService
 {

@@ -5,8 +5,7 @@ using Orleans.Runtime;
 namespace GymApi.Infrastructure.UserManagement;
 
 /// <summary>
-/// This interface is internal to Infrastructure. 
-/// It bridges the Domain IActiveUser with Orleans IGrain.
+/// This interface bridges the Domain IActiveUser with Orleans IGrain.
 /// </summary>
 public interface IUserGrain : IActiveUser, IGrainWithGuidKey
 {

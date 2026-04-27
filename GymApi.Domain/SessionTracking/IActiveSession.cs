@@ -2,7 +2,6 @@
 
 /// <summary>
 /// Domain-level abstraction for an active training session.
-/// Implementation will likely be an Orleans Grain, but the Domain/Application layers don't need to know that.
 /// </summary>
 public interface IActiveSession
 {

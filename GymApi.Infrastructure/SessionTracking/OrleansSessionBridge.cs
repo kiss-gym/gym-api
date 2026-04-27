@@ -5,8 +5,7 @@ using Orleans.Runtime;
 namespace GymApi.Infrastructure.SessionTracking;
 
 /// <summary>
-/// This interface is internal to Infrastructure. 
-/// It bridges the Domain IActiveSession with Orleans IGrain.
+/// This interface bridges the Domain IActiveSession with Orleans IGrain.
 /// </summary>
 public interface ITrainingSessionGrain : IActiveSession, IGrainWithGuidKey 
 { 
@@ -24,7 +23,10 @@ public sealed class TrainingSessionGrain(
         var sessionId = this.GetPrimaryKey();
         var session = TrainingSession.Create(userId, sessionId);
         
-        if (previousSession != null) session.InheritFrom(previousSession);
+        if (previousSession != null)
+        {
+            session.InheritFrom(previousSession);
+        }
 
         sessionState.State = session;
         await sessionState.WriteStateAsync();
