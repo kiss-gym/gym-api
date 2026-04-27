@@ -18,11 +18,11 @@ public interface ITrainingSessionGrain : IGrainWithGuidKey
     /// If previousSession is provided, exercises are inherited as pending.
     /// </summary>
     [Alias("Initialize")]
-    Task InitializeAsync(Guid userId, TrainingSession? previousSession = null);
+    Task<TrainingSession> InitializeAsync(Guid userId, TrainingSession? previousSession = null);
 
     /// <summary>Adds and starts a new exercise, auto-finishing any currently running one.</summary>
     [Alias("AddExercise")]
-    Task<ExerciseEntry> AddExerciseAsync(
+    Task<(ExerciseEntry Entry, TrainingSession State)> AddExerciseAsync(
         string autoLabel,
         string? photoUrl,
         DateTimeOffset? maxEndAt,
@@ -30,15 +30,15 @@ public interface ITrainingSessionGrain : IGrainWithGuidKey
 
     /// <summary>Starts a pending exercise.</summary>
     [Alias("StartExercise")]
-    Task<ExerciseEntry> StartExerciseAsync(Guid exerciseId, DateTimeOffset? maxEndAt = null);
+    Task<(ExerciseEntry Entry, TrainingSession State)> StartExerciseAsync(Guid exerciseId, DateTimeOffset? maxEndAt = null);
 
     /// <summary>Finishes a specific running exercise.</summary>
     [Alias("FinishExercise")]
-    Task FinishExerciseAsync(Guid exerciseId);
+    Task<TrainingSession> FinishExerciseAsync(Guid exerciseId);
 
     /// <summary>Removes an exercise from the session.</summary>
     [Alias("RemoveExercise")]
-    Task RemoveExerciseAsync(Guid exerciseId);
+    Task<TrainingSession> RemoveExerciseAsync(Guid exerciseId);
 
     /// <summary>Finishes the entire session.</summary>
     [Alias("Finish")]

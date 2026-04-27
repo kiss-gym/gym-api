@@ -27,7 +27,8 @@ public sealed class ExerciseEntry
     {
     }
 
-    internal static ExerciseEntry CreatePending(
+    // Changed from internal to public to be accessible by test projects
+    public static ExerciseEntry CreatePending(
         string autoLabel,
         string? photoUrl,
         IEnumerable<ExerciseProperty>? properties = null)

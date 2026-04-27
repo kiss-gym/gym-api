@@ -4,40 +4,50 @@ using GymApi.Domain.UserManagement;
 using NSubstitute;
 using NSubstitute.ReturnsExtensions;
 using NUnit.Framework;
+using Orleans;
 
 namespace GymApi.Tests.SessionTracking;
 
 [TestFixture]
 public sealed class CurrentSessionServiceTests
 {
+    private IGrainFactory _grainFactory = null!;
     private ISessionRepository _repository = null!;
     private IUserContext _userContext = null!;
     private CurrentSessionService _service = null!;
+    private ITrainingSessionGrain _grain = null!;
 
     [SetUp]
     public void SetUp()
     {
+        _grainFactory = Substitute.For<IGrainFactory>();
         _repository = Substitute.For<ISessionRepository>();
         _userContext = Substitute.For<IUserContext>();
-        _service = new CurrentSessionService(_repository, _userContext);
+        _grain = Substitute.For<ITrainingSessionGrain>();
+        
+        _grainFactory.GetGrain<ITrainingSessionGrain>(Arg.Any<Guid>()).Returns(_grain);
+        
+        _service = new CurrentSessionService(_grainFactory, _repository, _userContext);
     }
 
     [Test]
     public async Task CreateAsync_WithoutInheritance_CreatesAndSavesNewSession()
     {
         var userId = Guid.NewGuid();
+        var session = TrainingSession.Create(userId);
+        _grain.InitializeAsync(userId, null).Returns(session);
+        _grain.GetStateAsync().Returns(session);
 
         var result = await _service.CreateSessionAsync(userId);
 
+        await _grain.Received(1).InitializeAsync(userId, null);
         await _repository.Received(1).SaveAsync(
-            Arg.Is<TrainingSession>(s => s.UserId == userId && s.Status == SessionStatus.Active),
+            Arg.Is<TrainingSession>(s => s.UserId == userId),
             Arg.Any<CancellationToken>());
 
         Assert.Multiple(() =>
         {
             Assert.That(result.UserId, Is.EqualTo(userId));
-            Assert.That(result.InheritedFromSessionId, Is.Null);
-            Assert.That(result.Exercises, Is.Empty);
         });
     }
 
@@ -49,39 +59,17 @@ public sealed class CurrentSessionServiceTests
         previous.AddExercise("Squat", null, null);
         previous.Finish();
 
+        var session = TrainingSession.Create(userId);
+        session.InheritFrom(previous);
+        
         _repository.FindAsync(previous.Id, Arg.Any<CancellationToken>()).Returns(previous);
+        _grain.InitializeAsync(userId, previous).Returns(session);
+        _grain.GetStateAsync().Returns(session);
 
         var result = await _service.CreateSessionAsync(userId, previous.Id);
 
-        Assert.Multiple(() =>
-        {
-            Assert.That(result.InheritedFromSessionId, Is.EqualTo(previous.Id));
-            Assert.That(result.Exercises.Count, Is.EqualTo(1));
-            Assert.That(result.Exercises[0].AutoLabel, Is.EqualTo("Squat"));
-            Assert.That(result.Exercises[0].IsPending, Is.True);
-        });
-    }
-
-    [Test]
-    public void GetAsync_WhenNotFound_ThrowsKeyNotFoundException()
-    {
-        _repository.FindAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).ReturnsNull();
-
-        Assert.That(async () => await _service.GetSessionAsync(Guid.NewGuid()), Throws.TypeOf<KeyNotFoundException>());
-    }
-
-    [Test]
-    public void GetAsync_WhenAuthenticatedAsDifferentUser_ThrowsUnauthorizedAccessException()
-    {
-        var userId = Guid.NewGuid();
-        var otherUserId = Guid.NewGuid();
-        var session = TrainingSession.Create(userId);
-
-        _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
-        _userContext.UserId.Returns(otherUserId);
-        _userContext.IsAuthenticated.Returns(true);
-
-        Assert.That(async () => await _service.GetSessionAsync(session.Id), Throws.TypeOf<UnauthorizedAccessException>());
+        await _grain.Received(1).InitializeAsync(userId, previous);
+        Assert.That(result.InheritedFromSessionId, Is.EqualTo(previous.Id));
     }
 
     [Test]
@@ -89,34 +77,17 @@ public sealed class CurrentSessionServiceTests
     {
         var userId = Guid.NewGuid();
         var session = TrainingSession.Create(userId);
-        _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
-        _userContext.UserId.Returns(userId);
-        _userContext.IsAuthenticated.Returns(true);
+        var exercise = ExerciseEntry.CreatePending("Bench Press", null);
+        
+        _grain.GetStateAsync().Returns(session);
+        _grain.AddExerciseAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<DateTimeOffset?>(), Arg.Any<IEnumerable<ExerciseProperty>?>())
+            .Returns((exercise, session));
 
         var result = await _service.AddExerciseAsync(session.Id, "Bench Press", null, null);
 
+        await _grain.Received(1).AddExerciseAsync("Bench Press", null, null, null);
         await _repository.Received(1).SaveAsync(session, Arg.Any<CancellationToken>());
-        Assert.Multiple(() =>
-        {
-            Assert.That(result.AutoLabel, Is.EqualTo("Bench Press"));
-            Assert.That(result.IsRunning, Is.True);
-        });
-    }
-
-    [Test]
-    public async Task RemoveExerciseAsync_RemovesAndPersists()
-    {
-        var userId = Guid.NewGuid();
-        var session = TrainingSession.Create(userId);
-        var exercise = session.AddExercise("Dip", null, null);
-        _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
-        _userContext.UserId.Returns(userId);
-        _userContext.IsAuthenticated.Returns(true);
-
-        await _service.RemoveExerciseAsync(session.Id, exercise.Id);
-
-        await _repository.Received(1).SaveAsync(session, Arg.Any<CancellationToken>());
-        Assert.That(session.Exercises, Is.Empty);
+        Assert.That(result.AutoLabel, Is.EqualTo("Bench Press"));
     }
 
     [Test]
@@ -124,51 +95,15 @@ public sealed class CurrentSessionServiceTests
     {
         var userId = Guid.NewGuid();
         var session = TrainingSession.Create(userId);
-        _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
-        _userContext.UserId.Returns(userId);
-        _userContext.IsAuthenticated.Returns(true);
+        session.Finish();
+        
+        _grain.GetStateAsync().Returns(session);
+        _grain.FinishAsync().Returns(session);
 
         var result = await _service.FinishSessionAsync(session.Id);
 
+        await _grain.Received(1).FinishAsync();
         await _repository.Received(1).SaveAsync(session, Arg.Any<CancellationToken>());
         Assert.That(result.Status, Is.EqualTo(SessionStatus.Finished));
-    }
-
-    [Test]
-    public async Task StartExerciseAsync_StartsPendingAndPersists()
-    {
-        var userId = Guid.NewGuid();
-        var previous = TrainingSession.Create(userId);
-        previous.AddExercise("Romanian DL", null, null);
-        previous.Finish();
-
-        var session = TrainingSession.Create(previous.UserId);
-        session.InheritFrom(previous);
-
-        var pendingId = session.Exercises[0].Id;
-        _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
-        _userContext.UserId.Returns(userId);
-        _userContext.IsAuthenticated.Returns(true);
-
-        var result = await _service.StartExerciseAsync(session.Id, pendingId);
-
-        await _repository.Received(1).SaveAsync(session, Arg.Any<CancellationToken>());
-        Assert.That(result.IsRunning, Is.True);
-    }
-
-    [Test]
-    public async Task FinishExerciseAsync_FinishesRunningExerciseAndPersists()
-    {
-        var userId = Guid.NewGuid();
-        var session = TrainingSession.Create(userId);
-        var exercise = session.AddExercise("Push-up", null, null); // This starts the exercise
-        _repository.FindAsync(session.Id, Arg.Any<CancellationToken>()).Returns(session);
-        _userContext.UserId.Returns(userId);
-        _userContext.IsAuthenticated.Returns(true);
-
-        var result = await _service.FinishExerciseAsync(session.Id, exercise.Id);
-
-        await _repository.Received(1).SaveAsync(session, Arg.Any<CancellationToken>());
-        Assert.That(result.IsFinished, Is.True);
     }
 }

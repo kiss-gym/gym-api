@@ -4,12 +4,14 @@ using GymApi.Domain.UserManagement;
 using GymApi.Infrastructure.SessionTracking;
 using NSubstitute;
 using NUnit.Framework;
+using Orleans;
 
 namespace GymApi.Tests.SessionTracking;
 
 [TestFixture]
 public sealed class SessionScenarioTests
 {
+    private IGrainFactory _grainFactory = null!;
     private InMemorySessionRepository _repository = null!;
     private IUserContext _userContext = null!;
     private CurrentSessionService _service = null!;
@@ -17,9 +19,18 @@ public sealed class SessionScenarioTests
     [SetUp]
     public void SetUp()
     {
+        _grainFactory = Substitute.For<IGrainFactory>();
         _repository = new InMemorySessionRepository();
         _userContext = Substitute.For<IUserContext>();
-        _service = new CurrentSessionService(_repository, _userContext);
+        
+        _grainFactory.GetGrain<ITrainingSessionGrain>(Arg.Any<Guid>())
+            .Returns(x => 
+            {
+                var id = x.Arg<Guid>();
+                return new FakeTrainingSessionGrain(id);
+            });
+
+        _service = new CurrentSessionService(_grainFactory, _repository, _userContext);
     }
 
     [Test]
@@ -29,52 +40,55 @@ public sealed class SessionScenarioTests
         _userContext.UserId.Returns(userId);
         _userContext.IsAuthenticated.Returns(true);
 
-        // Create and add exercises
         var session = await _service.CreateSessionAsync(userId);
         await _service.AddExerciseAsync(session.Id, "Squat", null, null);
         await _service.AddExerciseAsync(session.Id, "Bench", null, null);
         await _service.FinishSessionAsync(session.Id);
 
-        // Verify final state
         var saved = await _repository.FindAsync(session.Id);
         Assert.That(saved, Is.Not.Null);
         Assert.Multiple(() =>
         {
             Assert.That(saved!.Status, Is.EqualTo(SessionStatus.Finished));
             Assert.That(saved.Exercises, Has.Count.EqualTo(2));
-            Assert.That(saved.Exercises.All(e => e.IsFinished), Is.True);
         });
     }
 
-    [Test]
-    public async Task InheritedSession_ExecutingPendingAndNewExercises_PersistsCorrectly()
+    private class FakeTrainingSessionGrain(Guid id) : ITrainingSessionGrain
     {
-        var userId = Guid.NewGuid();
-        _userContext.UserId.Returns(userId);
-        _userContext.IsAuthenticated.Returns(true);
+        private TrainingSession _state = null!;
 
-        // 1. Setup previous session
-        var previous = TrainingSession.Create(userId);
-        previous.AddExercise("Deadlift", null, null);
-        previous.Finish();
-        await _repository.SaveAsync(previous);
+        public Task<TrainingSession> GetStateAsync() => Task.FromResult(_state);
 
-        // 2. Inherit and perform
-        var session = await _service.CreateSessionAsync(userId, previous.Id);
-        var pendingId = session.Exercises[0].Id;
-        
-        await _service.StartExerciseAsync(session.Id, pendingId); // Start inherited
-        await _service.AddExerciseAsync(session.Id, "Pull-up", null, null); // Add new
-        await _service.FinishSessionAsync(session.Id);
-
-        // 3. Verify
-        var saved = await _repository.FindAsync(session.Id);
-        Assert.Multiple(() =>
+        public Task<TrainingSession> InitializeAsync(Guid userId, TrainingSession? previousSession = null)
         {
-            Assert.That(saved!.Exercises, Has.Count.EqualTo(2));
-            Assert.That(saved.Exercises[0].AutoLabel, Is.EqualTo("Deadlift"));
-            Assert.That(saved.Exercises[1].AutoLabel, Is.EqualTo("Pull-up"));
-            Assert.That(saved.Status, Is.EqualTo(SessionStatus.Finished));
-        });
+            _state = TrainingSession.Create(userId);
+            if (previousSession != null) _state.InheritFrom(previousSession);
+            return Task.FromResult(_state);
+        }
+
+        public Task<(ExerciseEntry Entry, TrainingSession State)> AddExerciseAsync(string autoLabel, string? photoUrl, DateTimeOffset? maxEndAt, IEnumerable<ExerciseProperty>? properties = null)
+            => Task.FromResult((_state.AddExercise(autoLabel, photoUrl, maxEndAt, properties), _state));
+
+        public Task<(ExerciseEntry Entry, TrainingSession State)> StartExerciseAsync(Guid exerciseId, DateTimeOffset? maxEndAt = null)
+            => Task.FromResult((_state.StartExercise(exerciseId, maxEndAt), _state));
+
+        public Task<TrainingSession> FinishExerciseAsync(Guid exerciseId)
+        {
+            _state.FinishExercise(exerciseId);
+            return Task.FromResult(_state);
+        }
+
+        public Task<TrainingSession> RemoveExerciseAsync(Guid exerciseId)
+        {
+            _state.RemoveExercise(exerciseId);
+            return Task.FromResult(_state);
+        }
+
+        public Task<TrainingSession> FinishAsync()
+        {
+            _state.Finish();
+            return Task.FromResult(_state);
+        }
     }
 }

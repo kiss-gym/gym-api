@@ -1,9 +1,13 @@
 using GymApi.Domain.SessionTracking;
 using GymApi.Domain.UserManagement;
+using Orleans;
 
 namespace GymApi.Application.SessionTracking;
 
-public sealed class CurrentSessionService(ISessionRepository repository, IUserContext userContext)
+public sealed class CurrentSessionService(
+    IGrainFactory grainFactory, 
+    ISessionRepository repository,
+    IUserContext userContext)
     : ICurrentSessionService
 {
     public async Task<TrainingSession> CreateSessionAsync(
@@ -11,28 +15,26 @@ public sealed class CurrentSessionService(ISessionRepository repository, IUserCo
         Guid? inheritFromSessionId = null,
         CancellationToken ct = default)
     {
-        // For now, we allow passing userId, but in a real app we'd likely validate it against userContext
-        var session = TrainingSession.Create(userId);
+        var sessionId = Guid.NewGuid();
+        var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
 
+        TrainingSession? previous = null;
         if (inheritFromSessionId.HasValue)
         {
-            var previous = await repository.FindAsync(inheritFromSessionId.Value, ct);
-            if (previous != null)
-            {
-                session.InheritFrom(previous);
-            }
+            previous = await repository.FindAsync(inheritFromSessionId.Value, ct);
         }
 
-        await repository.SaveAsync(session, ct);
-        return session;
+        var state = await grain.InitializeAsync(userId, previous);
+        await repository.SaveAsync(state, ct); 
+        
+        return state;
     }
 
     public async Task<TrainingSession> GetSessionAsync(Guid sessionId, CancellationToken ct = default)
     {
-        var session = await repository.FindAsync(sessionId, ct)
-                      ?? throw new KeyNotFoundException($"Session {sessionId} not found.");
+        var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
+        var session = await grain.GetStateAsync();
 
-        // Authorization check: User can only access their own sessions
         if (userContext.IsAuthenticated && session.UserId != userContext.UserId)
         {
             throw new UnauthorizedAccessException("You do not have access to this session.");
@@ -49,10 +51,11 @@ public sealed class CurrentSessionService(ISessionRepository repository, IUserCo
         IEnumerable<ExerciseProperty>? properties = null,
         CancellationToken ct = default)
     {
-        var session = await GetSessionAsync(sessionId, ct);
-        var exercise = session.AddExercise(autoLabel, photoUrl, maxEndAt, properties);
-        await repository.SaveAsync(session, ct);
-        return exercise;
+        var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
+        var (entry, state) = await grain.AddExerciseAsync(autoLabel, photoUrl, maxEndAt, properties);
+        
+        await repository.SaveAsync(state, ct);
+        return entry;
     }
 
     public async Task<ExerciseEntry> StartExerciseAsync(
@@ -61,10 +64,11 @@ public sealed class CurrentSessionService(ISessionRepository repository, IUserCo
         DateTimeOffset? maxEndAt = null,
         CancellationToken ct = default)
     {
-        var session = await GetSessionAsync(sessionId, ct);
-        var exercise = session.StartExercise(exerciseId, maxEndAt);
-        await repository.SaveAsync(session, ct);
-        return exercise;
+        var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
+        var (entry, state) = await grain.StartExerciseAsync(exerciseId, maxEndAt);
+        
+        await repository.SaveAsync(state, ct);
+        return entry;
     }
 
     public async Task<ExerciseEntry> FinishExerciseAsync(
@@ -72,11 +76,11 @@ public sealed class CurrentSessionService(ISessionRepository repository, IUserCo
         Guid exerciseId,
         CancellationToken ct = default)
     {
-        var session = await GetSessionAsync(sessionId, ct);
-        session.FinishExercise(exerciseId);
-        var exercise = session.Exercises.First(e => e.Id == exerciseId);
-        await repository.SaveAsync(session, ct);
-        return exercise;
+        var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
+        var state = await grain.FinishExerciseAsync(exerciseId);
+        
+        await repository.SaveAsync(state, ct);
+        return state.Exercises.First(e => e.Id == exerciseId);
     }
 
     public async Task RemoveExerciseAsync(
@@ -84,16 +88,16 @@ public sealed class CurrentSessionService(ISessionRepository repository, IUserCo
         Guid exerciseId,
         CancellationToken ct = default)
     {
-        var session = await GetSessionAsync(sessionId, ct);
-        session.RemoveExercise(exerciseId);
-        await repository.SaveAsync(session, ct);
+        var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
+        var state = await grain.RemoveExerciseAsync(exerciseId);
+        await repository.SaveAsync(state, ct);
     }
 
     public async Task<TrainingSession> FinishSessionAsync(Guid sessionId, CancellationToken ct = default)
     {
-        var session = await GetSessionAsync(sessionId, ct);
-        session.Finish();
-        await repository.SaveAsync(session, ct);
-        return session;
+        var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
+        var state = await grain.FinishAsync();
+        await repository.SaveAsync(state, ct);
+        return state;
     }
 }
