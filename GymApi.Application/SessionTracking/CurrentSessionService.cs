@@ -1,11 +1,11 @@
 using GymApi.Domain.SessionTracking;
 using GymApi.Domain.UserManagement;
-using Orleans;
 
 namespace GymApi.Application.SessionTracking;
 
 public sealed class CurrentSessionService(
-    IGrainFactory grainFactory, 
+    IActiveSessionProvider sessionProvider,
+    IActiveUserProvider userProvider,
     IUserContext userContext)
     : ICurrentSessionService
 {
@@ -15,28 +15,27 @@ public sealed class CurrentSessionService(
         CancellationToken ct = default)
     {
         var sessionId = Guid.NewGuid();
-        var sessionGrain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
+        var activeSession = sessionProvider.GetSession(sessionId);
 
         TrainingSession? previous = null;
         if (inheritFromSessionId.HasValue)
         {
-            var previousGrain = grainFactory.GetGrain<ITrainingSessionGrain>(inheritFromSessionId.Value);
-            previous = await previousGrain.GetStateAsync();
+            var previousActiveSession = sessionProvider.GetSession(inheritFromSessionId.Value);
+            previous = await previousActiveSession.GetStateAsync();
         }
 
-        var state = await sessionGrain.InitializeAsync(userId, previous);
+        var state = await activeSession.InitializeAsync(userId, previous);
         
-        // Update User index
-        var userGrain = grainFactory.GetGrain<IUserGrain>(userId);
-        await userGrain.SetLatestSessionAsync(sessionId);
+        var activeUser = userProvider.GetUser(userId);
+        await activeUser.SetLatestSessionAsync(sessionId);
         
         return state;
     }
 
     public async Task<TrainingSession> GetSessionAsync(Guid sessionId, CancellationToken ct = default)
     {
-        var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
-        var session = await grain.GetStateAsync();
+        var activeSession = sessionProvider.GetSession(sessionId);
+        var session = await activeSession.GetStateAsync();
 
         if (userContext.IsAuthenticated && session.UserId != userContext.UserId)
         {
@@ -54,8 +53,8 @@ public sealed class CurrentSessionService(
         IEnumerable<ExerciseProperty>? properties = null,
         CancellationToken ct = default)
     {
-        var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
-        var (entry, _) = await grain.AddExerciseAsync(autoLabel, photoUrl, maxEndAt, properties);
+        var activeSession = sessionProvider.GetSession(sessionId);
+        var (entry, _) = await activeSession.AddExerciseAsync(autoLabel, photoUrl, maxEndAt, properties);
         return entry;
     }
 
@@ -65,8 +64,8 @@ public sealed class CurrentSessionService(
         DateTimeOffset? maxEndAt = null,
         CancellationToken ct = default)
     {
-        var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
-        var (entry, _) = await grain.StartExerciseAsync(exerciseId, maxEndAt);
+        var activeSession = sessionProvider.GetSession(sessionId);
+        var (entry, _) = await activeSession.StartExerciseAsync(exerciseId, maxEndAt);
         return entry;
     }
 
@@ -75,8 +74,8 @@ public sealed class CurrentSessionService(
         Guid exerciseId,
         CancellationToken ct = default)
     {
-        var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
-        var state = await grain.FinishExerciseAsync(exerciseId);
+        var activeSession = sessionProvider.GetSession(sessionId);
+        var state = await activeSession.FinishExerciseAsync(exerciseId);
         return state.Exercises.First(e => e.Id == exerciseId);
     }
 
@@ -85,13 +84,13 @@ public sealed class CurrentSessionService(
         Guid exerciseId,
         CancellationToken ct = default)
     {
-        var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
-        await grain.RemoveExerciseAsync(exerciseId);
+        var activeSession = sessionProvider.GetSession(sessionId);
+        await activeSession.RemoveExerciseAsync(exerciseId);
     }
 
     public async Task<TrainingSession> FinishSessionAsync(Guid sessionId, CancellationToken ct = default)
     {
-        var grain = grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
-        return await grain.FinishAsync();
+        var activeSession = sessionProvider.GetSession(sessionId);
+        return await activeSession.FinishAsync();
     }
 }

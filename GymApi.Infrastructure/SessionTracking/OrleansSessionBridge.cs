@@ -5,44 +5,39 @@ using Orleans.Runtime;
 namespace GymApi.Infrastructure.SessionTracking;
 
 /// <summary>
-/// Infrastructure implementation of the TrainingSession Grain.
-/// Handles persistence and mirrors the Domain logic by delegating to the TrainingSession aggregate.
+/// This interface is internal to Infrastructure. 
+/// It bridges the Domain IActiveSession with Orleans IGrain.
 /// </summary>
+public interface ITrainingSessionGrain : IActiveSession, IGrainWithGuidKey 
+{ 
+}
+
 public sealed class TrainingSessionGrain(
     [PersistentState("session", "sessionStore")] IPersistentState<TrainingSession> sessionState)
     : Grain, ITrainingSessionGrain
 {
-    [Alias("GetState")]
     public Task<TrainingSession> GetStateAsync() => Task.FromResult(sessionState.State);
 
-    [Alias("Initialize")]
     public async Task<TrainingSession> InitializeAsync(Guid userId, TrainingSession? previousSession = null)
     {
-        var session = TrainingSession.Create(userId);
-
-        if (previousSession != null)
-        {
-            session.InheritFrom(previousSession);
-        }
+        // Use the Grain's Guid as the TrainingSession Id to keep them in sync
+        var sessionId = this.GetPrimaryKey();
+        var session = TrainingSession.Create(userId, sessionId);
+        
+        if (previousSession != null) session.InheritFrom(previousSession);
 
         sessionState.State = session;
         await sessionState.WriteStateAsync();
         return sessionState.State;
     }
 
-    [Alias("AddExercise")]
-    public async Task<(ExerciseEntry Entry, TrainingSession State)> AddExerciseAsync(
-        string autoLabel,
-        string? photoUrl,
-        DateTimeOffset? maxEndAt,
-        IEnumerable<ExerciseProperty>? properties = null)
+    public async Task<(ExerciseEntry Entry, TrainingSession State)> AddExerciseAsync(string autoLabel, string? photoUrl, DateTimeOffset? maxEndAt, IEnumerable<ExerciseProperty>? properties = null)
     {
         var entry = sessionState.State.AddExercise(autoLabel, photoUrl, maxEndAt, properties);
         await sessionState.WriteStateAsync();
         return (entry, sessionState.State);
     }
 
-    [Alias("StartExercise")]
     public async Task<(ExerciseEntry Entry, TrainingSession State)> StartExerciseAsync(Guid exerciseId, DateTimeOffset? maxEndAt = null)
     {
         var entry = sessionState.State.StartExercise(exerciseId, maxEndAt);
@@ -50,7 +45,6 @@ public sealed class TrainingSessionGrain(
         return (entry, sessionState.State);
     }
 
-    [Alias("FinishExercise")]
     public async Task<TrainingSession> FinishExerciseAsync(Guid exerciseId)
     {
         sessionState.State.FinishExercise(exerciseId);
@@ -58,7 +52,6 @@ public sealed class TrainingSessionGrain(
         return sessionState.State;
     }
 
-    [Alias("RemoveExercise")]
     public async Task<TrainingSession> RemoveExerciseAsync(Guid exerciseId)
     {
         sessionState.State.RemoveExercise(exerciseId);
@@ -66,11 +59,18 @@ public sealed class TrainingSessionGrain(
         return sessionState.State;
     }
 
-    [Alias("Finish")]
     public async Task<TrainingSession> FinishAsync()
     {
         sessionState.State.Finish();
         await sessionState.WriteStateAsync();
         return sessionState.State;
     }
+}
+
+/// <summary>
+/// Implementation of the provider that Application uses.
+/// </summary>
+public sealed class OrleansActiveSessionProvider(IGrainFactory grainFactory) : IActiveSessionProvider
+{
+    public IActiveSession GetSession(Guid sessionId) => grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
 }

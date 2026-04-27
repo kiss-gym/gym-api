@@ -3,52 +3,53 @@ using GymApi.Domain.SessionTracking;
 using GymApi.Domain.UserManagement;
 using NSubstitute;
 using NUnit.Framework;
-using Orleans;
 
 namespace GymApi.Tests.SessionTracking;
 
 [TestFixture]
 public sealed class SessionScenarioTests
 {
-    private IGrainFactory _grainFactory = null!;
+    private IActiveSessionProvider _sessionProvider = null!;
+    private IActiveUserProvider _userProvider = null!;
     private IUserContext _userContext = null!;
     private CurrentSessionService _service = null!;
-    private Dictionary<Guid, ITrainingSessionGrain> _sessionGrains = new();
-    private Dictionary<Guid, IUserGrain> _userGrains = new();
+    private Dictionary<Guid, IActiveSession> _sessionFakes = new(); // Renamed for clarity
+    private Dictionary<Guid, IActiveUser> _userFakes = new(); // Renamed for clarity
 
     [SetUp]
     public void SetUp()
     {
-        _grainFactory = Substitute.For<IGrainFactory>();
+        _sessionProvider = Substitute.For<IActiveSessionProvider>();
+        _userProvider = Substitute.For<IActiveUserProvider>();
         _userContext = Substitute.For<IUserContext>();
-        _sessionGrains.Clear();
-        _userGrains.Clear();
+        _sessionFakes.Clear();
+        _userFakes.Clear();
         
-        _grainFactory.GetGrain<ITrainingSessionGrain>(Arg.Any<Guid>())
+        _sessionProvider.GetSession(Arg.Any<Guid>())
             .Returns(x => 
             {
                 var id = x.Arg<Guid>();
-                if (!_sessionGrains.TryGetValue(id, out var grain))
+                if (!_sessionFakes.TryGetValue(id, out var fake))
                 {
-                    grain = new FakeTrainingSessionGrain(id);
-                    _sessionGrains[id] = grain;
+                    fake = new FakeActiveSession(id); // Pass the ID to the Fake
+                    _sessionFakes[id] = fake;
                 }
-                return grain;
+                return fake;
             });
 
-        _grainFactory.GetGrain<IUserGrain>(Arg.Any<Guid>())
+        _userProvider.GetUser(Arg.Any<Guid>())
             .Returns(x =>
             {
                 var id = x.Arg<Guid>();
-                if (!_userGrains.TryGetValue(id, out var grain))
+                if (!_userFakes.TryGetValue(id, out var fake))
                 {
-                    grain = new FakeUserGrain();
-                    _userGrains[id] = grain;
+                    fake = new FakeActiveUser();
+                    _userFakes[id] = fake;
                 }
-                return grain;
+                return fake;
             });
 
-        _service = new CurrentSessionService(_grainFactory, _userContext);
+        _service = new CurrentSessionService(_sessionProvider, _userProvider, _userContext);
     }
 
     [Test]
@@ -67,8 +68,8 @@ public sealed class SessionScenarioTests
         var newSession = await _service.CreateSessionAsync(userId, prevSession.Id);
         
         // 3. Verify user has latest session index
-        var userGrain = _grainFactory.GetGrain<IUserGrain>(userId);
-        var latestId = await userGrain.GetLatestSessionIdAsync();
+        var activeUser = _userProvider.GetUser(userId);
+        var latestId = await activeUser.GetLatestSessionIdAsync();
         
         Assert.Multiple(() =>
         {
@@ -78,20 +79,30 @@ public sealed class SessionScenarioTests
         });
     }
 
-    private class FakeUserGrain : IUserGrain
+    private class FakeActiveUser : IActiveUser
     {
         private Guid? _latestSessionId;
         public Task SetLatestSessionAsync(Guid sessionId) { _latestSessionId = sessionId; return Task.CompletedTask; }
         public Task<Guid?> GetLatestSessionIdAsync() => Task.FromResult(_latestSessionId);
     }
 
-    private class FakeTrainingSessionGrain(Guid id) : ITrainingSessionGrain
+    private class FakeActiveSession : IActiveSession
     {
-        private TrainingSession _state = null!;
+        private TrainingSession _state; // No null!
+        private readonly Guid _id; // Store the ID for this fake session
+
+        public FakeActiveSession(Guid id) // Constructor takes the ID
+        {
+            _id = id;
+            // Initialize _state to a dummy session using its ID to prevent NREs before InitializeAsync
+            _state = TrainingSession.Create(Guid.Empty, _id); 
+        }
+
         public Task<TrainingSession> GetStateAsync() => Task.FromResult(_state);
         public Task<TrainingSession> InitializeAsync(Guid userId, TrainingSession? previousSession = null)
         {
-            _state = TrainingSession.Create(userId);
+            // When initialized, create the real session using the correct ID
+            _state = TrainingSession.Create(userId, _id);
             if (previousSession != null) _state.InheritFrom(previousSession);
             return Task.FromResult(_state);
         }

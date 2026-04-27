@@ -4,6 +4,14 @@ using Orleans.Runtime;
 
 namespace GymApi.Infrastructure.UserManagement;
 
+/// <summary>
+/// This interface is internal to Infrastructure. 
+/// It bridges the Domain IActiveUser with Orleans IGrain.
+/// </summary>
+public interface IUserGrain : IActiveUser, IGrainWithGuidKey
+{
+}
+
 public sealed class UserGrain(
     [PersistentState("user", "sessionStore")] IPersistentState<UserState> userState)
     : Grain, IUserGrain
@@ -21,4 +29,12 @@ public sealed class UserGrain(
 public record UserState
 {
     [Id(0)] public Guid? LatestSessionId { get; set; }
+}
+
+/// <summary>
+/// Implementation of the provider that Application uses.
+/// </summary>
+public sealed class OrleansActiveUserProvider(IGrainFactory grainFactory) : IActiveUserProvider
+{
+    public IActiveUser GetUser(Guid userId) => grainFactory.GetGrain<IUserGrain>(userId);
 }

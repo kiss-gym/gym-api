@@ -1,5 +1,3 @@
-using Orleans;
-
 namespace GymApi.Domain.SessionTracking;
 
 /// <summary>
@@ -7,18 +5,16 @@ namespace GymApi.Domain.SessionTracking;
 /// Session invariants: only one exercise runs at a time.
 /// New exercises auto-finish the previous running one.
 /// </summary>
-[GenerateSerializer]
-[Alias("GymApi.Domain.SessionTracking.TrainingSession")]
 public sealed class TrainingSession
 {
-    [Id(0)] public Guid Id { get; private init; }
-    [Id(1)] public Guid UserId { get; private set; }
-    [Id(2)] public DateTimeOffset CreatedAt { get; private set; }
-    [Id(3)] public DateTimeOffset? FinishedAt { get; private set; }
-    [Id(4)] public SessionStatus Status { get; private set; }
-    [Id(5)] public Guid? InheritedFromSessionId { get; private set; }
+    public Guid Id { get; private init; }
+    public Guid UserId { get; private set; }
+    public DateTimeOffset CreatedAt { get; private set; }
+    public DateTimeOffset? FinishedAt { get; private set; }
+    public SessionStatus Status { get; private set; }
+    public Guid? InheritedFromSessionId { get; private set; }
 
-    [Id(6)] private readonly List<ExerciseEntry> _exercises = [];
+    private readonly List<ExerciseEntry> _exercises = [];
     public IReadOnlyList<ExerciseEntry> Exercises => _exercises.AsReadOnly();
 
     private TrainingSession()
@@ -26,11 +22,11 @@ public sealed class TrainingSession
     }
 
     /// <summary>Creates a new, empty active session.</summary>
-    public static TrainingSession Create(Guid userId)
+    public static TrainingSession Create(Guid userId, Guid? sessionId = null)
     {
         return new TrainingSession
         {
-            Id = Guid.NewGuid(),
+            Id = sessionId ?? Guid.NewGuid(),
             UserId = userId,
             CreatedAt = DateTimeOffset.UtcNow,
             Status = SessionStatus.Active

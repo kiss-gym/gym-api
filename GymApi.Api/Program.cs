@@ -57,14 +57,15 @@ builder.Services.AddSwaggerGen(c =>
     c.DocInclusionPredicate((_, _) => true);
 });
 
-// User Management (generic subdomain)
+// User Management
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
 builder.Services.AddScoped<IUserContext, MockUserContext>();
+builder.Services.AddSingleton<IActiveUserProvider, OrleansActiveUserProvider>();
 
-// Session Tracking (core subdomain)
+// Session Tracking
 builder.Services.AddScoped<ICurrentSessionService, CurrentSessionService>();
-// ISessionRepository removed - Orleans is now the primary store
+builder.Services.AddSingleton<IActiveSessionProvider, OrleansActiveSessionProvider>();
 
 builder.Services.AddTransient<ExceptionMiddleware>();
 
@@ -83,7 +84,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-// Root endpoint
 app.MapGet("/", (HttpContext context) =>
 {
     var info = new
@@ -100,11 +100,7 @@ app.MapGet("/", (HttpContext context) =>
         return Results.Content(
             $"<html><body style='font-family: sans-serif; padding: 2rem;'>" +
             $"<h1>{info.Name}</h1>" +
-            $"<p><strong>Status:</strong> {info.Status}</p>" +
-            $"<p><strong>Version:</strong> {info.Version}</p>" +
-            $"<p><strong>Environment:</strong> {info.Environment}</p>" +
-            $"<hr/>" +
-            $"<p><a href='/swagger'>Go to API Documentation (Swagger)</a></p>" +
+            $"<hr/><p><a href='/swagger'>Go to API Documentation</a></p>" +
             $"</body></html>", "text/html");
     }
 
