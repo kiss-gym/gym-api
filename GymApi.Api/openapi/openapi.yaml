@@ -7,7 +7,7 @@ paths:
   /:
     get:
       tags:
-        - 'GymApi.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null'
+        - 'GymApi.Api, Version=0.0.1.0, Culture=neutral, PublicKeyToken=null'
       responses:
         '200':
           description: OK

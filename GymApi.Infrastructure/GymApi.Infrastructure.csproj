@@ -4,6 +4,15 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <!-- Enable release-version debugging (optimization off, etc.) -->
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)..\msbuildLib\Ed.Common.props" />
+  <Import Project="$(MSBuildThisFileDirectory)..\msbuildLib\Ed.CSharp.targets" />
+
   <ItemGroup>
     <ProjectReference Include="..\GymApi.Domain\GymApi.Domain.csproj"/>
   </ItemGroup>
