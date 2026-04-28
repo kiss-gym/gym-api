@@ -9,29 +9,29 @@ namespace GymApi.Tests.SessionTracking;
 [TestFixture]
 public sealed class SessionScenarioTests
 {
-    private IActiveSessionProvider _sessionProvider = null!;
+    private ITrainingSessionLifecycleProvider _sessionLifecycleProvider = null!;
     private IActiveUserProvider _userProvider = null!;
     private IUserContext _userContext = null!;
-    private CurrentSessionService _service = null!;
-    private Dictionary<Guid, IActiveSession> _sessionFakes = new(); // Renamed for clarity
+    private TrainingSessionLifecycleService _lifecycleService = null!;
+    private Dictionary<Guid, ITrainingSessionLifecycle> _sessionFakes = new(); // Renamed for clarity
     private Dictionary<Guid, IActiveUser> _userFakes = new(); // Renamed for clarity
 
     [SetUp]
     public void SetUp()
     {
-        _sessionProvider = Substitute.For<IActiveSessionProvider>();
+        _sessionLifecycleProvider = Substitute.For<ITrainingSessionLifecycleProvider>();
         _userProvider = Substitute.For<IActiveUserProvider>();
         _userContext = Substitute.For<IUserContext>();
         _sessionFakes.Clear();
         _userFakes.Clear();
         
-        _sessionProvider.GetSession(Arg.Any<Guid>())
+        _sessionLifecycleProvider.GetTrainingSessionLifecycle(Arg.Any<Guid>())
             .Returns(x => 
             {
                 var id = x.Arg<Guid>();
                 if (!_sessionFakes.TryGetValue(id, out var fake))
                 {
-                    fake = new FakeActiveSession(id); // Pass the ID to the Fake
+                    fake = new FakeTrainingSessionLifecycle(id); // Pass the ID to the Fake
                     _sessionFakes[id] = fake;
                 }
                 return fake;
@@ -49,7 +49,7 @@ public sealed class SessionScenarioTests
                 return fake;
             });
 
-        _service = new CurrentSessionService(_sessionProvider, _userProvider, _userContext);
+        _lifecycleService = new TrainingSessionLifecycleService(_sessionLifecycleProvider, _userProvider, _userContext);
     }
 
     [Test]
@@ -60,12 +60,12 @@ public sealed class SessionScenarioTests
         _userContext.IsAuthenticated.Returns(true);
 
         // 1. Create previous session
-        var prevSession = await _service.CreateSessionAsync(userId);
-        await _service.AddExerciseAsync(prevSession.Id, "Old Squat", null, null);
-        await _service.FinishSessionAsync(prevSession.Id);
+        var prevSession = await _lifecycleService.CreateSessionAsync(userId);
+        await _lifecycleService.AddExerciseAsync(prevSession.Id, "Old Squat", null, null);
+        await _lifecycleService.FinishSessionAsync(prevSession.Id);
 
         // 2. Create new session inheriting from previous
-        var newSession = await _service.CreateSessionAsync(userId, prevSession.Id);
+        var newSession = await _lifecycleService.CreateSessionAsync(userId, prevSession.Id);
         
         // 3. Verify user has latest session index
         var activeUser = _userProvider.GetUser(userId);
@@ -86,12 +86,12 @@ public sealed class SessionScenarioTests
         public Task<Guid?> GetLatestSessionIdAsync() => Task.FromResult(_latestSessionId);
     }
 
-    private class FakeActiveSession : IActiveSession
+    private class FakeTrainingSessionLifecycle : ITrainingSessionLifecycle
     {
         private TrainingSession _state; // No null!
         private readonly Guid _id; // Store the ID for this fake session
 
-        public FakeActiveSession(Guid id) // Constructor takes the ID
+        public FakeTrainingSessionLifecycle(Guid id) // Constructor takes the ID
         {
             _id = id;
             // Initialize _state to a dummy session using its ID to prevent NREs before InitializeAsync
@@ -99,11 +99,11 @@ public sealed class SessionScenarioTests
         }
 
         public Task<TrainingSession> GetStateAsync() => Task.FromResult(_state);
-        public Task<TrainingSession> InitializeAsync(Guid userId, TrainingSession? previousSession = null)
+        public Task<TrainingSession> InitializeAsync(Guid userId, TrainingSession? parentSession = null)
         {
             // When initialized, create the real session using the correct ID
             _state = TrainingSession.Create(userId, _id);
-            if (previousSession != null) _state.InheritFrom(previousSession);
+            if (parentSession != null) _state.InheritFrom(parentSession);
             return Task.FromResult(_state);
         }
         public Task<(ExerciseEntry Entry, TrainingSession State)> AddExerciseAsync(string autoLabel, string? photoUrl, DateTimeOffset? maxEndAt, IEnumerable<ExerciseProperty>? properties = null)

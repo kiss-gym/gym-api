@@ -9,7 +9,7 @@ namespace GymApi.Api.Controllers;
 [ApiController]
 [Route("api/sessions")]
 [Produces("application/json")]
-public sealed class SessionTrackingController(ICurrentSessionService service) : ControllerBase
+public sealed class SessionTrackingController(ITrainingSessionLifecycleService lifecycleService) : ControllerBase
 {
     /// <summary>Create a new training session, optionally inheriting exercises.</summary>
     [HttpPost]
@@ -19,7 +19,7 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
         [FromBody] CreateSessionRequest request,
         CancellationToken ct)
     {
-        var session = await service.CreateSessionAsync(request.UserId, request.InheritFromSessionId, ct);
+        var session = await lifecycleService.CreateSessionAsync(request.UserId, request.InheritFromSessionId, ct);
         return CreatedAtAction(nameof(GetSession), new { sessionId = session.Id },
             SessionResponse.From(session));
     }
@@ -30,7 +30,7 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSession(Guid sessionId, CancellationToken ct)
     {
-        var session = await service.GetSessionAsync(sessionId, ct);
+        var session = await lifecycleService.GetSessionAsync(sessionId, ct);
         return Ok(SessionResponse.From(session));
     }
 
@@ -51,7 +51,7 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
         var properties = request.Properties?
             .Select(p => new ExerciseProperty(p.Name, p.Value));
 
-        var exercise = await service.AddExerciseAsync(
+        var exercise = await lifecycleService.AddExerciseAsync(
             sessionId, request.AutoLabel, request.PhotoUrl, request.MaxEndAt, properties, ct);
 
         return StatusCode(StatusCodes.Status201Created, ExerciseResponse.From(exercise));
@@ -71,7 +71,7 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
         [FromBody] StartExerciseRequest request,
         CancellationToken ct)
     {
-        var exercise = await service.StartExerciseAsync(sessionId, exerciseId, request.MaxEndAt, ct);
+        var exercise = await lifecycleService.StartExerciseAsync(sessionId, exerciseId, request.MaxEndAt, ct);
         return Ok(ExerciseResponse.From(exercise));
     }
 
@@ -85,7 +85,7 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
         Guid exerciseId,
         CancellationToken ct)
     {
-        var exercise = await service.FinishExerciseAsync(sessionId, exerciseId, ct);
+        var exercise = await lifecycleService.FinishExerciseAsync(sessionId, exerciseId, ct);
         return Ok(ExerciseResponse.From(exercise));
     }
 
@@ -97,7 +97,7 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
     public async Task<IActionResult> RemoveExercise(
         Guid sessionId, Guid exerciseId, CancellationToken ct)
     {
-        await service.RemoveExerciseAsync(sessionId, exerciseId, ct);
+        await lifecycleService.RemoveExerciseAsync(sessionId, exerciseId, ct);
         return NoContent();
     }
 
@@ -108,7 +108,7 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> FinishSession(Guid sessionId, CancellationToken ct)
     {
-        var session = await service.FinishSessionAsync(sessionId, ct);
+        var session = await lifecycleService.FinishSessionAsync(sessionId, ct);
         return Ok(SessionResponse.From(session));
     }
 }

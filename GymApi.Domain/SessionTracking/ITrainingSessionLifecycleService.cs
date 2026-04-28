@@ -3,7 +3,7 @@ namespace GymApi.Domain.SessionTracking;
 /// <summary>
 /// Domain-level abstraction for a training session service.
 /// </summary>
-public interface ICurrentSessionService
+public interface ITrainingSessionLifecycleService
 {
     Task<TrainingSession> CreateSessionAsync(
         Guid userId,

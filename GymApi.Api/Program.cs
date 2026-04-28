@@ -65,8 +65,8 @@ builder.Services.AddScoped<IUserContext, MockUserContext>();
 builder.Services.AddSingleton<IActiveUserProvider, OrleansActiveUserProvider>();
 
 // Session Tracking
-builder.Services.AddScoped<ICurrentSessionService, CurrentSessionService>();
-builder.Services.AddSingleton<IActiveSessionProvider, OrleansActiveSessionProvider>();
+builder.Services.AddScoped<ITrainingSessionLifecycleService, TrainingSessionLifecycleService>();
+builder.Services.AddSingleton<ITrainingSessionLifecycleProvider, OrleansTrainingSessionLifecycleProvider>();
 
 // Environment (supporting subdomain)
 builder.Services.AddSingleton(new VersionProvider(VersionProvider.ReadVersionFromAssembly(), VersionProvider.GetRuntimeDescription()));

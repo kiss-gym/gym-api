@@ -7,72 +7,72 @@ namespace GymApi.Infrastructure.SessionTracking;
 /// <summary>
 /// This interface bridges the Domain IActiveSession with Orleans IGrain.
 /// </summary>
-public interface ITrainingSessionGrain : IActiveSession, IGrainWithGuidKey 
+public interface ITrainingSessionLifecycleGrain : ITrainingSessionLifecycle, IGrainWithGuidKey 
 { 
 }
 
-public sealed class TrainingSessionGrain(
-    [PersistentState("session", "sessionStore")] IPersistentState<TrainingSession> sessionState)
-    : Grain, ITrainingSessionGrain
+public sealed class TrainingSessionLifecycleGrain(
+    [PersistentState("session", "sessionStore")] IPersistentState<TrainingSession> sessionPersistentState)
+    : Grain, ITrainingSessionLifecycleGrain
 {
-    public Task<TrainingSession> GetStateAsync() => Task.FromResult(sessionState.State);
+    public Task<TrainingSession> GetStateAsync() => Task.FromResult(sessionPersistentState.State);
 
-    public async Task<TrainingSession> InitializeAsync(Guid userId, TrainingSession? previousSession = null)
+    public async Task<TrainingSession> InitializeAsync(Guid userId, TrainingSession? parentSession = null)
     {
         // Use the Grain's Guid as the TrainingSession Id to keep them in sync
         var sessionId = this.GetPrimaryKey();
         var session = TrainingSession.Create(userId, sessionId);
         
-        if (previousSession != null)
+        if (parentSession != null)
         {
-            session.InheritFrom(previousSession);
+            session.InheritFrom(parentSession);
         }
 
-        sessionState.State = session;
-        await sessionState.WriteStateAsync();
-        return sessionState.State;
+        sessionPersistentState.State = session;
+        await sessionPersistentState.WriteStateAsync();
+        return sessionPersistentState.State;
     }
 
     public async Task<(ExerciseEntry Entry, TrainingSession State)> AddExerciseAsync(string autoLabel, string? photoUrl, DateTimeOffset? maxEndAt, IEnumerable<ExerciseProperty>? properties = null)
     {
-        var entry = sessionState.State.AddExercise(autoLabel, photoUrl, maxEndAt, properties);
-        await sessionState.WriteStateAsync();
-        return (entry, sessionState.State);
+        var entry = sessionPersistentState.State.AddExercise(autoLabel, photoUrl, maxEndAt, properties);
+        await sessionPersistentState.WriteStateAsync();
+        return (entry, sessionPersistentState.State);
     }
 
     public async Task<(ExerciseEntry Entry, TrainingSession State)> StartExerciseAsync(Guid exerciseId, DateTimeOffset? maxEndAt = null)
     {
-        var entry = sessionState.State.StartExercise(exerciseId, maxEndAt);
-        await sessionState.WriteStateAsync();
-        return (entry, sessionState.State);
+        var entry = sessionPersistentState.State.StartExercise(exerciseId, maxEndAt);
+        await sessionPersistentState.WriteStateAsync();
+        return (entry, sessionPersistentState.State);
     }
 
     public async Task<TrainingSession> FinishExerciseAsync(Guid exerciseId)
     {
-        sessionState.State.FinishExercise(exerciseId);
-        await sessionState.WriteStateAsync();
-        return sessionState.State;
+        sessionPersistentState.State.FinishExercise(exerciseId);
+        await sessionPersistentState.WriteStateAsync();
+        return sessionPersistentState.State;
     }
 
     public async Task<TrainingSession> RemoveExerciseAsync(Guid exerciseId)
     {
-        sessionState.State.RemoveExercise(exerciseId);
-        await sessionState.WriteStateAsync();
-        return sessionState.State;
+        sessionPersistentState.State.RemoveExercise(exerciseId);
+        await sessionPersistentState.WriteStateAsync();
+        return sessionPersistentState.State;
     }
 
     public async Task<TrainingSession> FinishAsync()
     {
-        sessionState.State.Finish();
-        await sessionState.WriteStateAsync();
-        return sessionState.State;
+        sessionPersistentState.State.Finish();
+        await sessionPersistentState.WriteStateAsync();
+        return sessionPersistentState.State;
     }
 }
 
 /// <summary>
 /// Implementation of the provider that Application uses.
 /// </summary>
-public sealed class OrleansActiveSessionProvider(IGrainFactory grainFactory) : IActiveSessionProvider
+public sealed class OrleansTrainingSessionLifecycleProvider(IGrainFactory grainFactory) : ITrainingSessionLifecycleProvider
 {
-    public IActiveSession GetSession(Guid sessionId) => grainFactory.GetGrain<ITrainingSessionGrain>(sessionId);
+    public ITrainingSessionLifecycle GetTrainingSessionLifecycle(Guid sessionId) => grainFactory.GetGrain<ITrainingSessionLifecycleGrain>(sessionId);
 }

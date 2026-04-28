@@ -3,10 +3,10 @@
 /// <summary>
 /// Domain-level abstraction for an active training session.
 /// </summary>
-public interface IActiveSession
+public interface ITrainingSessionLifecycle
 {
     Task<TrainingSession> GetStateAsync();
-    Task<TrainingSession> InitializeAsync(Guid userId, TrainingSession? previousSession = null);
+    Task<TrainingSession> InitializeAsync(Guid userId, TrainingSession? parentSession = null);
     Task<(ExerciseEntry Entry, TrainingSession State)> AddExerciseAsync(
         string autoLabel,
         string? photoUrl,

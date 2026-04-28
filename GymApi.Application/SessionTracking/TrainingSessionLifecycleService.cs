@@ -3,11 +3,11 @@ using GymApi.Domain.UserManagement;
 
 namespace GymApi.Application.SessionTracking;
 
-public sealed class CurrentSessionService(
-    IActiveSessionProvider sessionProvider,
+public sealed class TrainingSessionLifecycleService(
+    ITrainingSessionLifecycleProvider sessionLifecycleProvider,
     IActiveUserProvider userProvider,
     IUserContext userContext)
-    : ICurrentSessionService
+    : ITrainingSessionLifecycleService
 {
     public async Task<TrainingSession> CreateSessionAsync(
         Guid userId,
@@ -15,16 +15,16 @@ public sealed class CurrentSessionService(
         CancellationToken ct = default)
     {
         var sessionId = Guid.NewGuid();
-        var activeSession = sessionProvider.GetSession(sessionId);
+        var newSession = sessionLifecycleProvider.GetTrainingSessionLifecycle(sessionId);
 
-        TrainingSession? previous = null;
+        TrainingSession? parentSession = null;
         if (inheritFromSessionId.HasValue)
         {
-            var previousActiveSession = sessionProvider.GetSession(inheritFromSessionId.Value);
-            previous = await previousActiveSession.GetStateAsync();
+            var parentSessionLifecycle = sessionLifecycleProvider.GetTrainingSessionLifecycle(inheritFromSessionId.Value);
+            parentSession = await parentSessionLifecycle.GetStateAsync();
         }
 
-        var state = await activeSession.InitializeAsync(userId, previous);
+        var state = await newSession.InitializeAsync(userId, parentSession);
         
         var activeUser = userProvider.GetUser(userId);
         await activeUser.SetLatestSessionAsync(sessionId);
@@ -34,8 +34,8 @@ public sealed class CurrentSessionService(
 
     public async Task<TrainingSession> GetSessionAsync(Guid sessionId, CancellationToken ct = default)
     {
-        var activeSession = sessionProvider.GetSession(sessionId);
-        var session = await activeSession.GetStateAsync();
+        var sessionLifecycle = sessionLifecycleProvider.GetTrainingSessionLifecycle(sessionId);
+        var session = await sessionLifecycle.GetStateAsync();
 
         if (userContext.IsAuthenticated && session.UserId != userContext.UserId)
         {
@@ -53,8 +53,8 @@ public sealed class CurrentSessionService(
         IEnumerable<ExerciseProperty>? properties = null,
         CancellationToken ct = default)
     {
-        var activeSession = sessionProvider.GetSession(sessionId);
-        var (entry, _) = await activeSession.AddExerciseAsync(autoLabel, photoUrl, maxEndAt, properties);
+        var sessionLifecycle = sessionLifecycleProvider.GetTrainingSessionLifecycle(sessionId);
+        var (entry, _) = await sessionLifecycle.AddExerciseAsync(autoLabel, photoUrl, maxEndAt, properties);
         return entry;
     }
 
@@ -64,8 +64,8 @@ public sealed class CurrentSessionService(
         DateTimeOffset? maxEndAt = null,
         CancellationToken ct = default)
     {
-        var activeSession = sessionProvider.GetSession(sessionId);
-        var (entry, _) = await activeSession.StartExerciseAsync(exerciseId, maxEndAt);
+        var sessionLifecycle = sessionLifecycleProvider.GetTrainingSessionLifecycle(sessionId);
+        var (entry, _) = await sessionLifecycle.StartExerciseAsync(exerciseId, maxEndAt);
         return entry;
     }
 
@@ -74,8 +74,8 @@ public sealed class CurrentSessionService(
         Guid exerciseId,
         CancellationToken ct = default)
     {
-        var activeSession = sessionProvider.GetSession(sessionId);
-        var state = await activeSession.FinishExerciseAsync(exerciseId);
+        var sessionLifecycle = sessionLifecycleProvider.GetTrainingSessionLifecycle(sessionId);
+        var state = await sessionLifecycle.FinishExerciseAsync(exerciseId);
         return state.Exercises.First(e => e.Id == exerciseId);
     }
 
@@ -84,13 +84,13 @@ public sealed class CurrentSessionService(
         Guid exerciseId,
         CancellationToken ct = default)
     {
-        var activeSession = sessionProvider.GetSession(sessionId);
-        await activeSession.RemoveExerciseAsync(exerciseId);
+        var sessionLifecycle = sessionLifecycleProvider.GetTrainingSessionLifecycle(sessionId);
+        await sessionLifecycle.RemoveExerciseAsync(exerciseId);
     }
 
     public async Task<TrainingSession> FinishSessionAsync(Guid sessionId, CancellationToken ct = default)
     {
-        var activeSession = sessionProvider.GetSession(sessionId);
-        return await activeSession.FinishAsync();
+        var sessionLifecycle = sessionLifecycleProvider.GetTrainingSessionLifecycle(sessionId);
+        return await sessionLifecycle.FinishAsync();
     }
 }
