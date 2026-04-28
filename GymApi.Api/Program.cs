@@ -80,12 +80,13 @@ if (!app.Environment.IsDevelopment())
 }
 
 // Root endpoint: Combined HTML view for humans and JSON for machines/probes
-app.MapGet("/", (HttpContext context) =>
+app.MapGet("/", (HttpContext context, VersionProvider versionProvider) =>
 {
     var info = new
     {
         Name = "Kiss Gym API",
-        Version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "1.0.0",
+        versionProvider.CodeVersion,
+        versionProvider.LastCommitDate,
         Environment = app.Environment.EnvironmentName,
         Docs = "/swagger"
     };
@@ -96,7 +97,8 @@ app.MapGet("/", (HttpContext context) =>
         return Results.Content(
             $"<html><body style='font-family: sans-serif; padding: 2rem;'>" +
             $"<h1>{info.Name}</h1>" +
-            $"<p><strong>Version:</strong> {info.Version}</p>" +
+            $"<p><strong>Version:</strong> {info.CodeVersion}</p>" +
+            $"<p><strong>Last Commit Date:</strong> {info.LastCommitDate}</p>" +
             $"<p><strong>Environment:</strong> {info.Environment}</p>" +
             $"<hr/>" +
             $"<p><a href='/swagger'>Go to API Documentation (Swagger)</a></p>" +
