@@ -5,6 +5,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <!-- Enable release-version debugging (optimization off, etc.) -->
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)..\msbuildLib\Ed.Common.props" />
+  <Import Project="$(MSBuildThisFileDirectory)..\msbuildLib\Ed.CSharp.targets" />
+
   <ItemGroup>
     <PackageReference Include="NUnit" Version="4.3.2"/>
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0"/>

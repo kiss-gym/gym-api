@@ -7,6 +7,14 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <!-- Enable release-version debugging (optimization off, etc.) -->
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)..\msbuildLib\Ed.Common.props" />
+  <Import Project="$(MSBuildThisFileDirectory)..\msbuildLib\Ed.CSharp.targets" />
+
   <ItemGroup>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.1" />
     <PackageReference Include="Microsoft.Orleans.Server" Version="9.0.1" />

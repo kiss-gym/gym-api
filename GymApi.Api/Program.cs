@@ -4,6 +4,7 @@ using GymApi.Application.SessionTracking;
 using GymApi.Application.UserManagement;
 using GymApi.Domain.SessionTracking;
 using GymApi.Domain.UserManagement;
+using GymApi.Infrastructure.Environment;
 using GymApi.Infrastructure.SessionTracking;
 using GymApi.Infrastructure.UserManagement;
 using Microsoft.OpenApi.Models;
@@ -67,6 +68,9 @@ builder.Services.AddSingleton<IActiveUserProvider, OrleansActiveUserProvider>();
 builder.Services.AddScoped<ICurrentSessionService, CurrentSessionService>();
 builder.Services.AddSingleton<IActiveSessionProvider, OrleansActiveSessionProvider>();
 
+// Environment (supporting subdomain)
+builder.Services.AddSingleton(new VersionProvider(VersionProvider.ReadVersionFromAssembly(), VersionProvider.GetRuntimeDescription()));
+
 builder.Services.AddTransient<ExceptionMiddleware>();
 
 var app = builder.Build();
@@ -84,14 +88,14 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-app.MapGet("/", (HttpContext context) =>
+app.MapGet("/", (HttpContext context, VersionProvider versionProvider) =>
 {
     var info = new
     {
         Name = "Kiss Gym API",
-        Version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "1.0.0",
+        versionProvider.CodeVersion,
+        versionProvider.LastCommitDate,
         Environment = app.Environment.EnvironmentName,
-        Status = "Healthy",
         Docs = "/swagger"
     };
 
@@ -100,7 +104,11 @@ app.MapGet("/", (HttpContext context) =>
         return Results.Content(
             $"<html><body style='font-family: sans-serif; padding: 2rem;'>" +
             $"<h1>{info.Name}</h1>" +
-            $"<hr/><p><a href='/swagger'>Go to API Documentation</a></p>" +
+            $"<p><strong>Version:</strong> {info.CodeVersion}</p>" +
+            $"<p><strong>Last Commit Date:</strong> {info.LastCommitDate}</p>" +
+            $"<p><strong>Environment:</strong> {info.Environment}</p>" +
+            $"<hr/>" +
+            $"<p><a href='/swagger'>Go to API Documentation (Swagger)</a></p>" +
             $"</body></html>", "text/html");
     }
 
