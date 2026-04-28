@@ -4,6 +4,7 @@ using GymApi.Application.SessionTracking;
 using GymApi.Application.UserManagement;
 using GymApi.Domain.SessionTracking;
 using GymApi.Domain.UserManagement;
+using GymApi.Infrastructure.Environment;
 using GymApi.Infrastructure.SessionTracking;
 using GymApi.Infrastructure.UserManagement;
 using Microsoft.OpenApi.Models;
@@ -58,6 +59,9 @@ builder.Services.AddScoped<IUserContext, MockUserContext>();
 builder.Services.AddScoped<ICurrentSessionService, CurrentSessionService>();
 builder.Services.AddSingleton<ISessionRepository, InMemorySessionRepository>();
 
+// Environment (supporting subdomain)
+builder.Services.AddSingleton(new VersionProvider(VersionProvider.ReadVersionFromAssembly(), VersionProvider.GetRuntimeDescription()));
+
 builder.Services.AddTransient<ExceptionMiddleware>();
 
 var app = builder.Build();
@@ -83,7 +87,6 @@ app.MapGet("/", (HttpContext context) =>
         Name = "Kiss Gym API",
         Version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "1.0.0",
         Environment = app.Environment.EnvironmentName,
-        Status = "Healthy",
         Docs = "/swagger"
     };
 
@@ -93,7 +96,6 @@ app.MapGet("/", (HttpContext context) =>
         return Results.Content(
             $"<html><body style='font-family: sans-serif; padding: 2rem;'>" +
             $"<h1>{info.Name}</h1>" +
-            $"<p><strong>Status:</strong> {info.Status}</p>" +
             $"<p><strong>Version:</strong> {info.Version}</p>" +
             $"<p><strong>Environment:</strong> {info.Environment}</p>" +
             $"<hr/>" +
