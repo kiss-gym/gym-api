@@ -43,15 +43,15 @@ builder.Services.AddSwaggerGen(c =>
     {
         if (api.GroupName != null)
         {
-            return new[] { api.GroupName };
+            return [api.GroupName];
         }
 
         var controllerName = api.ActionDescriptor.RouteValues["controller"];
         return controllerName switch
         {
-            "SessionTracking" => new[] { "Sessions" },
-            "User" => new[] { "Users" },
-            _ => new[] { controllerName ?? "Default" }
+            "SessionTracking" => ["Sessions" ],
+            "User" => [ "Users" ],
+            _ => ["GymApi"]
         };
     });
 
