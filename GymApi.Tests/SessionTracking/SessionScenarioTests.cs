@@ -59,15 +59,15 @@ public sealed class SessionScenarioTests
         _userContext.UserId.Returns(userId);
         _userContext.IsAuthenticated.Returns(true);
 
-        // 1. Create previous session
+        // 1. Create a previous session
         var prevSession = await _lifecycleService.CreateSessionAsync(userId);
         await _lifecycleService.AddExerciseAsync(prevSession.Id, "Old Squat", null, null);
         await _lifecycleService.FinishSessionAsync(prevSession.Id);
 
-        // 2. Create new session inheriting from previous
+        // 2. Create a new session inheriting from previous
         var newSession = await _lifecycleService.CreateSessionAsync(userId, prevSession.Id);
         
-        // 3. Verify user has latest session index
+        // 3. Verify user has the latest session index
         var activeUser = _userProvider.GetUser(userId);
         var latestId = await activeUser.GetLatestSessionIdAsync();
         
