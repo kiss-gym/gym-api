@@ -16,4 +16,5 @@ public interface ITrainingSessionLifecycle
     Task<TrainingSession> FinishExerciseAsync(Guid exerciseId);
     Task<TrainingSession> RemoveExerciseAsync(Guid exerciseId);
     Task<TrainingSession> FinishAsync();
+    Task DeleteAsync();
 }

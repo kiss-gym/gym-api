@@ -67,6 +67,11 @@ public sealed class TrainingSessionLifecycleGrain(
         await sessionPersistentState.WriteStateAsync();
         return sessionPersistentState.State;
     }
+
+    public async Task DeleteAsync()
+    {
+        await sessionPersistentState.ClearStateAsync();
+    }
 }
 
 /// <summary>

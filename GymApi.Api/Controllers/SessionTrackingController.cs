@@ -111,4 +111,12 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
         var session = await lifecycleService.FinishSessionAsync(sessionId, ct);
         return Ok(SessionResponse.From(session));
     }
+    
+    [HttpDelete("{sessionId}")]
+    public async Task<IActionResult> DeleteSession(Guid sessionId, CancellationToken ct)
+    {
+        await lifecycleService.DeleteSessionAsync(sessionId, ct);
+        return NoContent(); // 204 No Content
+    }
+
 }
