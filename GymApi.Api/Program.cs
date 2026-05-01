@@ -1,4 +1,5 @@
 using GymApi.Api.Infrastructure;
+using GymApi.Api.Infrastructure.Middleware;
 using GymApi.Api.Infrastructure.Swagger;
 using GymApi.Application.SessionTracking;
 using GymApi.Application.UserManagement;
@@ -82,6 +83,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ExceptionMiddleware>();
+
+app.UseMiddleware<RequestResponseLoggingMiddleware>();
 
 if (!app.Environment.IsDevelopment())
 {

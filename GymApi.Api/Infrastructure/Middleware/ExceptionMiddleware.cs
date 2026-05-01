@@ -1,4 +1,4 @@
-namespace GymApi.Api.Infrastructure;
+namespace GymApi.Api.Infrastructure.Middleware;
 
 /// <summary>Maps domain exceptions to appropriate HTTP status codes.</summary>
 public sealed class ExceptionMiddleware(ILogger<ExceptionMiddleware> logger) : IMiddleware
