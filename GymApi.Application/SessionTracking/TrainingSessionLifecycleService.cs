@@ -93,4 +93,17 @@ public sealed class TrainingSessionLifecycleService(
         var sessionLifecycle = sessionLifecycleProvider.GetTrainingSessionLifecycle(sessionId);
         return await sessionLifecycle.FinishAsync();
     }
+
+    public async Task DeleteSessionAsync(Guid sessionId, CancellationToken ct = default)
+    {
+        var sessionLifecycle = sessionLifecycleProvider.GetTrainingSessionLifecycle(sessionId);
+        var session = await sessionLifecycle.GetStateAsync(); // Get state for auth check
+
+        if (userContext.IsAuthenticated && session.UserId != userContext.UserId)
+        {
+            throw new UnauthorizedAccessException("You do not have access to delete this session.");
+        }
+
+        await sessionLifecycle.DeleteAsync();
+    }
 }

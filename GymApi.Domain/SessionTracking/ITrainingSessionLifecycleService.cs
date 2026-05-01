@@ -41,4 +41,8 @@ public interface ITrainingSessionLifecycleService
     Task<TrainingSession> FinishSessionAsync(
         Guid sessionId,
         CancellationToken ct = default);
+
+    Task DeleteSessionAsync(
+        Guid sessionId,
+        CancellationToken ct = default);
 }
