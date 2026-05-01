@@ -30,7 +30,6 @@
     <Exec Command="dotnet tool restore" StandardOutputImportance="low" />
     <MakeDir Directories="openapi" />
     
-    <Exec Command="dotnet swagger tofile --output openapi/openapi.yaml --yaml &quot;$(TargetPath)&quot; v1" 
-          EnvironmentVariables="DOTNET_ROLL_FORWARD=LatestMajor" />
+    <Exec Command="dotnet swagger tofile --output openapi/openapi.yaml --yaml &quot;$(TargetPath)&quot; v1" EnvironmentVariables="DOTNET_ROLL_FORWARD=LatestMajor" />
   </Target>
 </Project>
