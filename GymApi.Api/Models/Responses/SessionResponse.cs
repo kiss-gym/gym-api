@@ -8,7 +8,7 @@ public sealed record SessionResponse(
     Guid UserId,
     DateTimeOffset CreatedAt,
     DateTimeOffset? FinishedAt,
-    string Status,
+    [Required] string Status,
     Guid? InheritedFromSessionId,
     [Required] IReadOnlyList<ExerciseResponse> Exercises)
 {

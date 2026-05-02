@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using GymApi.Api.Infrastructure;
 using GymApi.Api.Infrastructure.Middleware;
 using GymApi.Api.Infrastructure.Swagger;
@@ -20,7 +21,11 @@ builder.Host.UseOrleans(siloBuilder =>
     siloBuilder.AddMemoryGrainStorage("sessionStore");
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {

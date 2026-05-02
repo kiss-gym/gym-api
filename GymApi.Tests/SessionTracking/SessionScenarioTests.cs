@@ -170,6 +170,10 @@ public sealed class SessionScenarioTests
         Assert.That(activeSessions, Has.Count.EqualTo(1));
         Assert.That(activeSessions[0].Id, Is.EqualTo(s3.Id));
 
+        // Test filtering by status Finished
+        var finishedSessions = await _lifecycleService.GetSessionsAsync(status: SessionStatus.Finished);
+        Assert.That(finishedSessions, Has.Count.EqualTo(3)); // s1, s2, s4
+
         // Test sorting by finishedAt desc
         var sortedSessions = await _lifecycleService.GetSessionsAsync(userId: userId1, sort: "finishedAt:desc");
         // s3 is active so finishedAt is null. s2 finished after s1.

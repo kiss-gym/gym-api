@@ -120,17 +120,28 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
     }
 
     /// <summary>Get sessions with optional filtering, sorting, and pagination.</summary>
+    /// <param name="userId">Filter by user ID.</param>
+    /// <param name="status">Filter by session status (Active or Finished).</param>
+    /// <param name="sort">
+    /// Sort criteria in format 'property[:asc|desc]'. 
+    /// Supported properties: finishedAt (default), createdAt.
+    /// Example: finishedAt:desc
+    /// </param>
+    /// <param name="page">Page number (default 1).</param>
+    /// <param name="pageSize">Items per page (default 10).</param>
+    /// <param name="ct"></param>
     [HttpGet]
     [ProducesResponseType<PagedResponse<SessionResponse>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSessions(
         [FromQuery] Guid? userId,
+        [FromQuery] SessionStatus? status,
         [FromQuery] string? sort,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var sessions = await lifecycleService.GetSessionsAsync(userId, null, sort, page, pageSize, ct);
-        var totalCount = await lifecycleService.GetSessionsCountAsync(userId, null, ct);
+        var sessions = await lifecycleService.GetSessionsAsync(userId, status, sort, page, pageSize, ct);
+        var totalCount = await lifecycleService.GetSessionsCountAsync(userId, status, ct);
 
         var response = new PagedResponse<SessionResponse>(
             sessions.Select(SessionResponse.From).ToList(),

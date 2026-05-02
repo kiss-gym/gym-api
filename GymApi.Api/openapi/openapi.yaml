@@ -54,21 +54,30 @@ paths:
       parameters:
         - name: userId
           in: query
+          description: Filter by user ID.
           schema:
             type: string
             format: uuid
+        - name: status
+          in: query
+          description: Filter by session status (Active or Finished).
+          schema:
+            $ref: '#/components/schemas/SessionStatus'
         - name: sort
           in: query
+          description: "Sort criteria in format 'property[:asc|desc]'. \r\nSupported properties: finishedAt (default), createdAt.\r\nExample: finishedAt:desc"
           schema:
             type: string
         - name: page
           in: query
+          description: Page number (default 1).
           schema:
             type: integer
             format: int32
             default: 1
         - name: pageSize
           in: query
+          description: Items per page (default 10).
           schema:
             type: integer
             format: int32
@@ -474,18 +483,21 @@ components:
           type: string
       additionalProperties: false
     ExercisePropertyResponse:
+      required:
+        - name
+        - value
       type: object
       properties:
         name:
           type: string
-          nullable: true
         value:
           type: string
-          nullable: true
       additionalProperties: false
     ExerciseResponse:
       required:
+        - autoLabel
         - properties
+        - status
       type: object
       properties:
         id:
@@ -493,7 +505,6 @@ components:
           format: uuid
         autoLabel:
           type: string
-          nullable: true
         photoUrl:
           type: string
           nullable: true
@@ -511,7 +522,6 @@ components:
           nullable: true
         status:
           type: string
-          nullable: true
         properties:
           type: array
           items:
@@ -559,6 +569,7 @@ components:
     SessionResponse:
       required:
         - exercises
+        - status
       type: object
       properties:
         id:
@@ -576,7 +587,6 @@ components:
           nullable: true
         status:
           type: string
-          nullable: true
         inheritedFromSessionId:
           type: string
           format: uuid
@@ -609,6 +619,11 @@ components:
           format: int32
           readOnly: true
       additionalProperties: false
+    SessionStatus:
+      enum:
+        - Active
+        - Finished
+      type: string
     StartExerciseRequest:
       type: object
       properties:
@@ -618,6 +633,9 @@ components:
           nullable: true
       additionalProperties: false
     UserResponse:
+      required:
+        - email
+        - name
       type: object
       properties:
         id:
@@ -625,8 +643,6 @@ components:
           format: uuid
         email:
           type: string
-          nullable: true
         name:
           type: string
-          nullable: true
       additionalProperties: false

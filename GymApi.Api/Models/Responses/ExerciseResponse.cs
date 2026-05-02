@@ -3,16 +3,16 @@ using GymApi.Domain.SessionTracking;
 
 namespace GymApi.Api.Models.Responses;
 
-public sealed record ExercisePropertyResponse(string Name, string Value);
+public sealed record ExercisePropertyResponse([Required] string Name, [Required] string Value);
 
 public sealed record ExerciseResponse(
     Guid Id,
-    string AutoLabel,
+    [Required] string AutoLabel,
     string? PhotoUrl,
     DateTimeOffset? StartedAt,
     DateTimeOffset? MaxEndAt,
     DateTimeOffset? RealEndAt,
-    string Status,
+    [Required] string Status,
     [Required] IReadOnlyList<ExercisePropertyResponse> Properties)
 {
     public static ExerciseResponse From(ExerciseEntry e)
