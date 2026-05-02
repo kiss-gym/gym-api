@@ -47,6 +47,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
+    get:
+      tags:
+        - Sessions
+      summary: 'Get sessions with optional filtering, sorting, and pagination.'
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: sort
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 10
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponsePagedResponse'
   '/api/sessions/{sessionId}':
     get:
       tags:
@@ -282,6 +315,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
+  /api/sessions/active:
+    get:
+      tags:
+        - Sessions
+      summary: Get active sessions with optional filtering and pagination.
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 10
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponsePagedResponse'
   /api/users/register:
     post:
       tags:
@@ -520,6 +583,28 @@ components:
           items:
             $ref: '#/components/schemas/ExerciseResponse'
           nullable: true
+      additionalProperties: false
+    SessionResponsePagedResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionResponse'
+          nullable: true
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalCount:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+          readOnly: true
       additionalProperties: false
     StartExerciseRequest:
       type: object

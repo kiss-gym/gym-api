@@ -12,7 +12,8 @@ public interface ITrainingSessionLifecycleGrain : ITrainingSessionLifecycle, IGr
 }
 
 public sealed class TrainingSessionLifecycleGrain(
-    [PersistentState("session", "sessionStore")] IPersistentState<TrainingSession> sessionPersistentState)
+    [PersistentState("session", "sessionStore")] IPersistentState<TrainingSession> sessionPersistentState,
+    ITrainingSessionRepository repository)
     : Grain, ITrainingSessionLifecycleGrain
 {
     public Task<TrainingSession> GetStateAsync() => Task.FromResult(sessionPersistentState.State);
@@ -30,6 +31,7 @@ public sealed class TrainingSessionLifecycleGrain(
 
         sessionPersistentState.State = session;
         await sessionPersistentState.WriteStateAsync();
+        await repository.SaveAsync(sessionPersistentState.State);
         return sessionPersistentState.State;
     }
 
@@ -37,6 +39,7 @@ public sealed class TrainingSessionLifecycleGrain(
     {
         var entry = sessionPersistentState.State.AddExercise(autoLabel, photoUrl, maxEndAt, properties);
         await sessionPersistentState.WriteStateAsync();
+        await repository.SaveAsync(sessionPersistentState.State);
         return (entry, sessionPersistentState.State);
     }
 
@@ -44,6 +47,7 @@ public sealed class TrainingSessionLifecycleGrain(
     {
         var entry = sessionPersistentState.State.StartExercise(exerciseId, maxEndAt);
         await sessionPersistentState.WriteStateAsync();
+        await repository.SaveAsync(sessionPersistentState.State);
         return (entry, sessionPersistentState.State);
     }
 
@@ -51,6 +55,7 @@ public sealed class TrainingSessionLifecycleGrain(
     {
         sessionPersistentState.State.FinishExercise(exerciseId);
         await sessionPersistentState.WriteStateAsync();
+        await repository.SaveAsync(sessionPersistentState.State);
         return sessionPersistentState.State;
     }
 
@@ -58,6 +63,7 @@ public sealed class TrainingSessionLifecycleGrain(
     {
         sessionPersistentState.State.RemoveExercise(exerciseId);
         await sessionPersistentState.WriteStateAsync();
+        await repository.SaveAsync(sessionPersistentState.State);
         return sessionPersistentState.State;
     }
 
@@ -65,12 +71,15 @@ public sealed class TrainingSessionLifecycleGrain(
     {
         sessionPersistentState.State.Finish();
         await sessionPersistentState.WriteStateAsync();
+        await repository.SaveAsync(sessionPersistentState.State);
         return sessionPersistentState.State;
     }
 
     public async Task DeleteAsync()
     {
+        var sessionId = this.GetPrimaryKey();
         await sessionPersistentState.ClearStateAsync();
+        await repository.DeleteAsync(sessionId);
     }
 }
 

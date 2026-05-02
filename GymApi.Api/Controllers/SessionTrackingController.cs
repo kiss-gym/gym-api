@@ -119,4 +119,46 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
         return NoContent(); // 204 No Content
     }
 
+    /// <summary>Get sessions with optional filtering, sorting, and pagination.</summary>
+    [HttpGet]
+    [ProducesResponseType<PagedResponse<SessionResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetSessions(
+        [FromQuery] Guid? userId,
+        [FromQuery] string? sort,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
+    {
+        var sessions = await lifecycleService.GetSessionsAsync(userId, null, sort, page, pageSize, ct);
+        var totalCount = await lifecycleService.GetSessionsCountAsync(userId, null, ct);
+
+        var response = new PagedResponse<SessionResponse>(
+            sessions.Select(SessionResponse.From).ToList(),
+            page,
+            pageSize,
+            totalCount);
+
+        return Ok(response);
+    }
+
+    /// <summary>Get active sessions with optional filtering and pagination.</summary>
+    [HttpGet("active")]
+    [ProducesResponseType<PagedResponse<SessionResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetActiveSessions(
+        [FromQuery] Guid? userId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
+    {
+        var sessions = await lifecycleService.GetSessionsAsync(userId, SessionStatus.Active, null, page, pageSize, ct);
+        var totalCount = await lifecycleService.GetSessionsCountAsync(userId, SessionStatus.Active, ct);
+
+        var response = new PagedResponse<SessionResponse>(
+            sessions.Select(SessionResponse.From).ToList(),
+            page,
+            pageSize,
+            totalCount);
+
+        return Ok(response);
+    }
 }

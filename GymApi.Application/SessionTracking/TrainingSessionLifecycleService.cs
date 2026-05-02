@@ -6,7 +6,8 @@ namespace GymApi.Application.SessionTracking;
 public sealed class TrainingSessionLifecycleService(
     ITrainingSessionLifecycleProvider sessionLifecycleProvider,
     IActiveUserProvider userProvider,
-    IUserContext userContext)
+    IUserContext userContext,
+    ITrainingSessionRepository repository)
     : ITrainingSessionLifecycleService
 {
     public async Task<TrainingSession> CreateSessionAsync(
@@ -105,6 +106,70 @@ public sealed class TrainingSessionLifecycleService(
     {
         var sessionLifecycle = sessionLifecycleProvider.GetTrainingSessionLifecycle(sessionId);
         return await sessionLifecycle.FinishAsync();
+    }
+
+    public async Task<IReadOnlyList<TrainingSession>> GetSessionsAsync(
+        Guid? userId = null,
+        SessionStatus? status = null,
+        string? sort = null,
+        int? page = null,
+        int? pageSize = null,
+        CancellationToken ct = default)
+    {
+        var sessions = await repository.GetAllAsync(ct);
+        var query = sessions.AsQueryable();
+
+        if (userId.HasValue)
+        {
+            query = query.Where(s => s.UserId == userId.Value);
+        }
+
+        if (status.HasValue)
+        {
+            query = query.Where(s => s.Status == status.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(sort))
+        {
+            var parts = sort.Split(':');
+            var propertyName = parts[0];
+            var descending = parts.Length > 1 && parts[1].Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+            query = propertyName.ToLowerInvariant() switch
+            {
+                "finishedat" => descending ? query.OrderByDescending(s => s.FinishedAt) : query.OrderBy(s => s.FinishedAt),
+                "createdat" => descending ? query.OrderByDescending(s => s.CreatedAt) : query.OrderBy(s => s.CreatedAt),
+                _ => query
+            };
+        }
+
+        if (page.HasValue && pageSize.HasValue)
+        {
+            query = query.Skip((page.Value - 1) * pageSize.Value).Take(pageSize.Value);
+        }
+
+        return query.ToList().AsReadOnly();
+    }
+
+    public async Task<int> GetSessionsCountAsync(
+        Guid? userId = null,
+        SessionStatus? status = null,
+        CancellationToken ct = default)
+    {
+        var sessions = await repository.GetAllAsync(ct);
+        var query = sessions.AsQueryable();
+
+        if (userId.HasValue)
+        {
+            query = query.Where(s => s.UserId == userId.Value);
+        }
+
+        if (status.HasValue)
+        {
+            query = query.Where(s => s.Status == status.Value);
+        }
+
+        return query.Count();
     }
 
     public async Task DeleteSessionAsync(Guid sessionId, CancellationToken ct = default)

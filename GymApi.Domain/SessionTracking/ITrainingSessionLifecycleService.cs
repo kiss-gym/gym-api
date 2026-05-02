@@ -42,6 +42,19 @@ public interface ITrainingSessionLifecycleService
         Guid sessionId,
         CancellationToken ct = default);
 
+    Task<IReadOnlyList<TrainingSession>> GetSessionsAsync(
+        Guid? userId = null,
+        SessionStatus? status = null,
+        string? sort = null,
+        int? page = null,
+        int? pageSize = null,
+        CancellationToken ct = default);
+
+    Task<int> GetSessionsCountAsync(
+        Guid? userId = null,
+        SessionStatus? status = null,
+        CancellationToken ct = default);
+
     Task DeleteSessionAsync(
         Guid sessionId,
         CancellationToken ct = default);

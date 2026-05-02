@@ -66,6 +66,7 @@ builder.Services.AddScoped<IUserContext, MockUserContext>();
 builder.Services.AddSingleton<IActiveUserProvider, OrleansActiveUserProvider>();
 
 // Session Tracking
+builder.Services.AddSingleton<ITrainingSessionRepository, InMemoryTrainingSessionRepository>();
 builder.Services.AddScoped<ITrainingSessionLifecycleService, TrainingSessionLifecycleService>();
 builder.Services.AddSingleton<ITrainingSessionLifecycleProvider, OrleansTrainingSessionLifecycleProvider>();
 
