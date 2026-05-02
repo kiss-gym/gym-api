@@ -14,6 +14,20 @@ public sealed class TrainingSessionLifecycleService(
         Guid? inheritFromSessionId = null,
         CancellationToken ct = default)
     {
+        var activeUser = userProvider.GetUser(userId);
+        var latestSessionId = await activeUser.GetLatestSessionIdAsync();
+
+        if (latestSessionId.HasValue)
+        {
+            var latestSessionLifecycle = sessionLifecycleProvider.GetTrainingSessionLifecycle(latestSessionId.Value);
+            var latestSessionState = await latestSessionLifecycle.GetStateAsync();
+
+            if (latestSessionState.Status == SessionStatus.Active)
+            {
+                throw new InvalidOperationException("Cannot create a new session while an existing session is still active. Please finish the current session first.");
+            }
+        }
+
         var sessionId = Guid.NewGuid();
         var newSession = sessionLifecycleProvider.GetTrainingSessionLifecycle(sessionId);
 
@@ -26,7 +40,6 @@ public sealed class TrainingSessionLifecycleService(
 
         var state = await newSession.InitializeAsync(userId, parentSession);
         
-        var activeUser = userProvider.GetUser(userId);
         await activeUser.SetLatestSessionAsync(sessionId);
         
         return state;

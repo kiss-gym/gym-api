@@ -119,6 +119,23 @@ public sealed class SessionScenarioTests
         });
     }
 
+    [Test]
+    public async Task CreateSessionAsync_ThrowsInvalidOperationException_WhenActiveSessionExists()
+    {
+        var userId = Guid.NewGuid();
+        _userContext.UserId.Returns(userId);
+        _userContext.IsAuthenticated.Returns(true);
+
+        // Create an initial active session
+        var firstSession = await _lifecycleService.CreateSessionAsync(userId);
+        
+        // Attempt to create a second session for the same user
+        Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        {
+            await _lifecycleService.CreateSessionAsync(userId);
+        }, "Should throw InvalidOperationException when trying to create a new session while one is active.");
+    }
+
     private class FakeActiveUser : IActiveUser
     {
         private Guid? _latestSessionId;
@@ -135,6 +152,8 @@ public sealed class SessionScenarioTests
         {
             _id = id;
             // Initialize _state to a dummy session using its ID to prevent NREs before InitializeAsync
+            // This dummy state is immediately overwritten by InitializeAsync in real scenarios,
+            // but ensures _state is not null before InitializeAsync is called in some test paths.
             _state = TrainingSession.Create(Guid.Empty, _id); 
         }
 
