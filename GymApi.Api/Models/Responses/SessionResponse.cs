@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using GymApi.Domain.SessionTracking;
 
 namespace GymApi.Api.Models.Responses;
@@ -9,7 +10,7 @@ public sealed record SessionResponse(
     DateTimeOffset? FinishedAt,
     string Status,
     Guid? InheritedFromSessionId,
-    IReadOnlyList<ExerciseResponse> Exercises)
+    [Required] IReadOnlyList<ExerciseResponse> Exercises)
 {
     public static SessionResponse From(TrainingSession s)
     {

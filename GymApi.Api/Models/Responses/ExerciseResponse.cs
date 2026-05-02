@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using GymApi.Domain.SessionTracking;
 
 namespace GymApi.Api.Models.Responses;
@@ -12,7 +13,7 @@ public sealed record ExerciseResponse(
     DateTimeOffset? MaxEndAt,
     DateTimeOffset? RealEndAt,
     string Status,
-    IReadOnlyList<ExercisePropertyResponse> Properties)
+    [Required] IReadOnlyList<ExercisePropertyResponse> Properties)
 {
     public static ExerciseResponse From(ExerciseEntry e)
     {

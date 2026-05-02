@@ -484,6 +484,8 @@ components:
           nullable: true
       additionalProperties: false
     ExerciseResponse:
+      required:
+        - properties
       type: object
       properties:
         id:
@@ -514,7 +516,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ExercisePropertyResponse'
-          nullable: true
       additionalProperties: false
     LoginRequest:
       required:
@@ -556,6 +557,8 @@ components:
           type: string
       additionalProperties: false
     SessionResponse:
+      required:
+        - exercises
       type: object
       properties:
         id:
@@ -582,16 +585,16 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ExerciseResponse'
-          nullable: true
       additionalProperties: false
     SessionResponsePagedResponse:
+      required:
+        - items
       type: object
       properties:
         items:
           type: array
           items:
             $ref: '#/components/schemas/SessionResponse'
-          nullable: true
         page:
           type: integer
           format: int32

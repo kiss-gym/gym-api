@@ -1,7 +1,8 @@
-﻿namespace GymApi.Api.Models.Responses;
+﻿using System.ComponentModel.DataAnnotations;
+namespace GymApi.Api.Models.Responses;
 
 public record PagedResponse<T>(
-    IReadOnlyList<T> Items,
+    [Required] IReadOnlyList<T> Items,
     int Page,
     int PageSize,
     int TotalCount)
