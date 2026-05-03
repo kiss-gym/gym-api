@@ -8,7 +8,7 @@ using GymApi.Domain.UserManagement;
 using GymApi.Infrastructure.Environment;
 using GymApi.Infrastructure.SessionTracking;
 using GymApi.Infrastructure.UserManagement;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -16,8 +16,8 @@
   <Import Project="$(MSBuildThisFileDirectory)..\msbuildLib\Ed.CSharp.targets" />
 
   <ItemGroup>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.1" />
-    <PackageReference Include="Microsoft.Orleans.Server" Version="9.0.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
+    <PackageReference Include="Microsoft.Orleans.Server" Version="10.1.0" />
   </ItemGroup>
 
   <ItemGroup>

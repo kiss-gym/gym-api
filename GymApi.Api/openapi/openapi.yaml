@@ -1,4 +1,4 @@
-openapi: 3.0.1
+openapi: 3.0.4
 info:
   title: Kiss Gym API
   description: API for Kiss Gym - Session Tracking and User Management.
@@ -701,3 +701,7 @@ components:
         name:
           type: string
       additionalProperties: false
+tags:
+  - name: GymApi
+  - name: Sessions
+  - name: Users
