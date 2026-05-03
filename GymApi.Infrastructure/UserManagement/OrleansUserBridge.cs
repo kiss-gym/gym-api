@@ -1,6 +1,4 @@
 ﻿using GymApi.Domain.UserManagement;
-using Orleans;
-using Orleans.Runtime;
 
 namespace GymApi.Infrastructure.UserManagement;
 

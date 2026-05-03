@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
 using GymApi.Domain.SessionTracking;
-using Orleans;
 
 namespace GymApi.Infrastructure;
 
@@ -8,6 +7,7 @@ namespace GymApi.Infrastructure;
 
 [GenerateSerializer]
 [Alias("GymApi.Infrastructure.SessionStatusSurrogate")]
+// ReSharper disable once UnusedMember.Global
 public enum SessionStatusSurrogate { Active, Finished }
 
 [GenerateSerializer]

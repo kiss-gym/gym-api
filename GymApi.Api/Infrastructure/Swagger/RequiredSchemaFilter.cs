@@ -39,12 +39,14 @@ public class RequiredSchemaFilter : ISchemaFilter
                      .Where(p => p.GetCustomAttribute<RequiredAttribute>() != null))
         {
             var schemaProperty = schema.Properties.FirstOrDefault(p => p.Key.Equals(parameter.Name, StringComparison.OrdinalIgnoreCase));
-            if (schemaProperty.Key != null)
+            if (schemaProperty.Key == null)
             {
-                schemaProperty.Value.Nullable = false;
-                schema.Required ??= new HashSet<string>();
-                schema.Required.Add(schemaProperty.Key);
+                continue;
             }
+
+            schemaProperty.Value.Nullable = false;
+            schema.Required ??= new HashSet<string>();
+            schema.Required.Add(schemaProperty.Key);
         }
     }
 }

@@ -1,6 +1,4 @@
 ﻿using GymApi.Domain.SessionTracking;
-using Orleans;
-using Orleans.Runtime;
 
 namespace GymApi.Infrastructure.SessionTracking;
 

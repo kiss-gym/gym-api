@@ -126,7 +126,7 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
         return Ok(SessionResponse.From(session));
     }
     
-    [HttpDelete("{sessionId}")]
+    [HttpDelete("{sessionId:guid}")]
     public async Task<IActionResult> DeleteSession(Guid sessionId, CancellationToken ct)
     {
         await lifecycleService.DeleteSessionAsync(sessionId, ct);

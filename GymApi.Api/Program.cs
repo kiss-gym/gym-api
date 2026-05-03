@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using GymApi.Api.Infrastructure;
 using GymApi.Api.Infrastructure.Middleware;
 using GymApi.Api.Infrastructure.Swagger;
 using GymApi.Application.SessionTracking;
@@ -10,7 +9,6 @@ using GymApi.Infrastructure.Environment;
 using GymApi.Infrastructure.SessionTracking;
 using GymApi.Infrastructure.UserManagement;
 using Microsoft.OpenApi.Models;
-using Orleans.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 

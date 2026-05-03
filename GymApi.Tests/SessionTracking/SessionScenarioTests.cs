@@ -14,8 +14,8 @@ public sealed class SessionScenarioTests
     private IUserContext _userContext = null!;
     private TrainingSessionLifecycleService _lifecycleService = null!;
     private ITrainingSessionRepository _repository = null!;
-    private Dictionary<Guid, ITrainingSessionLifecycle> _sessionFakes = new(); // Renamed for clarity
-    private Dictionary<Guid, IActiveUser> _userFakes = new(); // Renamed for clarity
+    private readonly Dictionary<Guid, ITrainingSessionLifecycle> _sessionFakes = new();
+    private readonly Dictionary<Guid, IActiveUser> _userFakes = new();
 
     [SetUp]
     public void SetUp()
@@ -31,11 +31,13 @@ public sealed class SessionScenarioTests
             .Returns(x => 
             {
                 var id = x.Arg<Guid>();
-                if (!_sessionFakes.TryGetValue(id, out var fake))
+                if (_sessionFakes.TryGetValue(id, out var fake))
                 {
-                    fake = new FakeTrainingSessionLifecycle(id, _repository); // Pass the ID and repo to the Fake
-                    _sessionFakes[id] = fake;
+                    return fake;
                 }
+
+                fake = new FakeTrainingSessionLifecycle(id, _repository); // Pass the ID and repo to the Fake
+                _sessionFakes[id] = fake;
                 return fake;
             });
 
@@ -43,11 +45,13 @@ public sealed class SessionScenarioTests
             .Returns(x =>
             {
                 var id = x.Arg<Guid>();
-                if (!_userFakes.TryGetValue(id, out var fake))
+                if (_userFakes.TryGetValue(id, out var fake))
                 {
-                    fake = new FakeActiveUser();
-                    _userFakes[id] = fake;
+                    return fake;
                 }
+
+                fake = new FakeActiveUser();
+                _userFakes[id] = fake;
                 return fake;
             });
 
@@ -129,7 +133,7 @@ public sealed class SessionScenarioTests
         _userContext.IsAuthenticated.Returns(true);
 
         // Create an initial active session
-        var firstSession = await _lifecycleService.CreateSessionAsync(userId);
+        var unused = await _lifecycleService.CreateSessionAsync(userId);
         
         // Attempt to create a second session for the same user
         Assert.ThrowsAsync<InvalidOperationException>(async () =>
@@ -191,7 +195,7 @@ public sealed class SessionScenarioTests
     public async Task CreateSession_WithLabel_SetsLabel()
     {
         var userId = Guid.NewGuid();
-        var label = "Morning Workout";
+        const string label = "Morning Workout";
 
         var session = await _lifecycleService.CreateSessionAsync(userId, label: label);
 
@@ -203,7 +207,7 @@ public sealed class SessionScenarioTests
     {
         var userId = Guid.NewGuid();
         var session = await _lifecycleService.CreateSessionAsync(userId);
-        var newLabel = "Evening Session";
+        const string newLabel = "Evening Session";
 
         var updatedSession = await _lifecycleService.RenameSessionAsync(session.Id, newLabel);
 
@@ -239,7 +243,11 @@ public sealed class SessionScenarioTests
         {
             // When initialized, create the real session using the correct ID
             _state = TrainingSession.Create(userId, _id, label);
-            if (parentSession != null) _state.InheritFrom(parentSession);
+            if (parentSession != null)
+            {
+                _state.InheritFrom(parentSession);
+            }
+
             await _repository.SaveAsync(_state);
             return _state;
         }

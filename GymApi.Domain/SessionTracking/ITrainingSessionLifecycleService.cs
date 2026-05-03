@@ -5,6 +5,7 @@ namespace GymApi.Domain.SessionTracking;
 /// </summary>
 public interface ITrainingSessionLifecycleService
 {
+    // ReSharper disable UnusedParameter.Global
     Task<TrainingSession> CreateSessionAsync(
         Guid userId,
         Guid? inheritFromSessionId = null,
@@ -64,4 +65,5 @@ public interface ITrainingSessionLifecycleService
     Task DeleteSessionAsync(
         Guid sessionId,
         CancellationToken ct = default);
+    // ReSharper restore UnusedParameter.Global
 }
