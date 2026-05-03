@@ -114,6 +114,47 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
+    patch:
+      tags:
+        - Sessions
+      summary: Rename a session.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenameSessionRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RenameSessionRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RenameSessionRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
     delete:
       tags:
         - Sessions
@@ -466,6 +507,9 @@ components:
         userId:
           type: string
           format: uuid
+        label:
+          type: string
+          nullable: true
         inheritFromSessionId:
           type: string
           format: uuid
@@ -566,6 +610,14 @@ components:
         name:
           type: string
       additionalProperties: false
+    RenameSessionRequest:
+      required:
+        - label
+      type: object
+      properties:
+        label:
+          type: string
+      additionalProperties: false
     SessionResponse:
       required:
         - exercises
@@ -587,6 +639,9 @@ components:
           nullable: true
         status:
           type: string
+        label:
+          type: string
+          nullable: true
         inheritedFromSessionId:
           type: string
           format: uuid

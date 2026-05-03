@@ -9,6 +9,7 @@ public sealed record SessionResponse(
     DateTimeOffset CreatedAt,
     DateTimeOffset? FinishedAt,
     [Required] string Status,
+    string? Label,
     Guid? InheritedFromSessionId,
     [Required] IReadOnlyList<ExerciseResponse> Exercises)
 {
@@ -20,6 +21,7 @@ public sealed record SessionResponse(
             s.CreatedAt,
             s.FinishedAt,
             s.Status.ToString(),
+            s.Label,
             s.InheritedFromSessionId,
             s.Exercises.Select(ExerciseResponse.From).ToList());
     }

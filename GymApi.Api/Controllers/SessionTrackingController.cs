@@ -19,7 +19,7 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
         [FromBody] CreateSessionRequest request,
         CancellationToken ct)
     {
-        var session = await lifecycleService.CreateSessionAsync(request.UserId, request.InheritFromSessionId, ct);
+        var session = await lifecycleService.CreateSessionAsync(request.UserId, request.InheritFromSessionId, request.Label, ct);
         return CreatedAtAction(nameof(GetSession), new { sessionId = session.Id },
             SessionResponse.From(session));
     }
@@ -31,6 +31,20 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
     public async Task<IActionResult> GetSession(Guid sessionId, CancellationToken ct)
     {
         var session = await lifecycleService.GetSessionAsync(sessionId, ct);
+        return Ok(SessionResponse.From(session));
+    }
+
+    /// <summary>Rename a session.</summary>
+    [HttpPatch("{sessionId:guid}")]
+    [ProducesResponseType<SessionResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RenameSession(
+        Guid sessionId,
+        [FromBody] RenameSessionRequest request,
+        CancellationToken ct)
+    {
+        var session = await lifecycleService.RenameSessionAsync(sessionId, request.Label, ct);
         return Ok(SessionResponse.From(session));
     }
 

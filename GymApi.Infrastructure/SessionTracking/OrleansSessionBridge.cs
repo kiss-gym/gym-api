@@ -18,11 +18,11 @@ public sealed class TrainingSessionLifecycleGrain(
 {
     public Task<TrainingSession> GetStateAsync() => Task.FromResult(sessionPersistentState.State);
 
-    public async Task<TrainingSession> InitializeAsync(Guid userId, TrainingSession? parentSession = null)
+    public async Task<TrainingSession> InitializeAsync(Guid userId, TrainingSession? parentSession = null, string? label = null)
     {
         // Use the Grain's Guid as the TrainingSession Id to keep them in sync
         var sessionId = this.GetPrimaryKey();
-        var session = TrainingSession.Create(userId, sessionId);
+        var session = TrainingSession.Create(userId, sessionId, label);
         
         if (parentSession != null)
         {
@@ -62,6 +62,14 @@ public sealed class TrainingSessionLifecycleGrain(
     public async Task<TrainingSession> RemoveExerciseAsync(Guid exerciseId)
     {
         sessionPersistentState.State.RemoveExercise(exerciseId);
+        await sessionPersistentState.WriteStateAsync();
+        await repository.SaveAsync(sessionPersistentState.State);
+        return sessionPersistentState.State;
+    }
+
+    public async Task<TrainingSession> RenameAsync(string label)
+    {
+        sessionPersistentState.State.Rename(label);
         await sessionPersistentState.WriteStateAsync();
         await repository.SaveAsync(sessionPersistentState.State);
         return sessionPersistentState.State;

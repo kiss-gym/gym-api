@@ -13,6 +13,7 @@ public sealed class TrainingSessionLifecycleService(
     public async Task<TrainingSession> CreateSessionAsync(
         Guid userId,
         Guid? inheritFromSessionId = null,
+        string? label = null,
         CancellationToken ct = default)
     {
         var activeUser = userProvider.GetUser(userId);
@@ -39,7 +40,7 @@ public sealed class TrainingSessionLifecycleService(
             parentSession = await parentSessionLifecycle.GetStateAsync();
         }
 
-        var state = await newSession.InitializeAsync(userId, parentSession);
+        var state = await newSession.InitializeAsync(userId, parentSession, label);
         
         await activeUser.SetLatestSessionAsync(sessionId);
         
@@ -100,6 +101,22 @@ public sealed class TrainingSessionLifecycleService(
     {
         var sessionLifecycle = sessionLifecycleProvider.GetTrainingSessionLifecycle(sessionId);
         await sessionLifecycle.RemoveExerciseAsync(exerciseId);
+    }
+
+    public async Task<TrainingSession> RenameSessionAsync(
+        Guid sessionId,
+        string label,
+        CancellationToken ct = default)
+    {
+        var sessionLifecycle = sessionLifecycleProvider.GetTrainingSessionLifecycle(sessionId);
+        var session = await sessionLifecycle.GetStateAsync();
+
+        if (userContext.IsAuthenticated && session.UserId != userContext.UserId)
+        {
+            throw new UnauthorizedAccessException("You do not have access to this session.");
+        }
+
+        return await sessionLifecycle.RenameAsync(label);
     }
 
     public async Task<TrainingSession> FinishSessionAsync(Guid sessionId, CancellationToken ct = default)

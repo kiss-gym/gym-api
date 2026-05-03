@@ -187,6 +187,32 @@ public sealed class SessionScenarioTests
         Assert.That(pagedSessions, Has.Count.EqualTo(2));
     }
 
+    [Test]
+    public async Task CreateSession_WithLabel_SetsLabel()
+    {
+        var userId = Guid.NewGuid();
+        var label = "Morning Workout";
+
+        var session = await _lifecycleService.CreateSessionAsync(userId, label: label);
+
+        Assert.That(session.Label, Is.EqualTo(label));
+    }
+
+    [Test]
+    public async Task RenameSession_UpdatesLabel()
+    {
+        var userId = Guid.NewGuid();
+        var session = await _lifecycleService.CreateSessionAsync(userId);
+        var newLabel = "Evening Session";
+
+        var updatedSession = await _lifecycleService.RenameSessionAsync(session.Id, newLabel);
+
+        Assert.That(updatedSession.Label, Is.EqualTo(newLabel));
+        
+        var retrievedSession = await _lifecycleService.GetSessionAsync(session.Id);
+        Assert.That(retrievedSession.Label, Is.EqualTo(newLabel));
+    }
+
     private class FakeActiveUser : IActiveUser
     {
         private Guid? _latestSessionId;
@@ -209,10 +235,10 @@ public sealed class SessionScenarioTests
         }
 
         public Task<TrainingSession> GetStateAsync() => Task.FromResult(_state!); // Use null-forgiving operator as it might be null after deletion
-        public async Task<TrainingSession> InitializeAsync(Guid userId, TrainingSession? parentSession = null)
+        public async Task<TrainingSession> InitializeAsync(Guid userId, TrainingSession? parentSession = null, string? label = null)
         {
             // When initialized, create the real session using the correct ID
-            _state = TrainingSession.Create(userId, _id);
+            _state = TrainingSession.Create(userId, _id, label);
             if (parentSession != null) _state.InheritFrom(parentSession);
             await _repository.SaveAsync(_state);
             return _state;
@@ -238,6 +264,12 @@ public sealed class SessionScenarioTests
         public async Task<TrainingSession> RemoveExerciseAsync(Guid exerciseId)
         {
             _state!.RemoveExercise(exerciseId);
+            await _repository.SaveAsync(_state);
+            return _state;
+        }
+        public async Task<TrainingSession> RenameAsync(string label)
+        {
+            _state!.Rename(label);
             await _repository.SaveAsync(_state);
             return _state;
         }

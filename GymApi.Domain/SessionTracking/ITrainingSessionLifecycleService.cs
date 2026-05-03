@@ -8,6 +8,7 @@ public interface ITrainingSessionLifecycleService
     Task<TrainingSession> CreateSessionAsync(
         Guid userId,
         Guid? inheritFromSessionId = null,
+        string? label = null,
         CancellationToken ct = default);
 
     Task<TrainingSession> GetSessionAsync(
@@ -36,6 +37,11 @@ public interface ITrainingSessionLifecycleService
     Task RemoveExerciseAsync(
         Guid sessionId,
         Guid exerciseId,
+        CancellationToken ct = default);
+
+    Task<TrainingSession> RenameSessionAsync(
+        Guid sessionId,
+        string label,
         CancellationToken ct = default);
 
     Task<TrainingSession> FinishSessionAsync(
