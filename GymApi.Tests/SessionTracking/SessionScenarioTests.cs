@@ -133,7 +133,7 @@ public sealed class SessionScenarioTests
         _userContext.IsAuthenticated.Returns(true);
 
         // Create an initial active session
-        var unused = await _lifecycleService.CreateSessionAsync(userId);
+        _ = await _lifecycleService.CreateSessionAsync(userId);
         
         // Attempt to create a second session for the same user
         Assert.ThrowsAsync<InvalidOperationException>(async () =>

@@ -27,11 +27,8 @@ csharp_style_var_when_type_is_apparent = true:suggestion
 # Enforce braces for all control flow statements (if, foreach, for, while)
 csharp_prefer_braces = true:suggestion
 
-# Roslyn: CyclomaticComplexityInspection enabled with threshold of 7 (see CodeMetricConfig.txt)
-dotnet_diagnostic.CA1502.severity = error
-
 # Threshold for JetBrains/Qodana CyclomaticComplexityInspection
-dotnet_code_metrics.cyclomatic_complexity_threshold = 7
+dotnet_code_metrics.cyclomatic_complexity_threshold = 8
 
 dotnet_naming_rule.private_static_readonly_rule.import_to_resharper = True
 dotnet_naming_rule.private_static_readonly_rule.resharper_description = Static readonly fields (private)

@@ -7,9 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 #pragma warning disable CA1873
-public class RequestResponseLoggingMiddleware(RequestDelegate next, ILogger<RequestResponseLoggingMiddleware> logger)
+public class RequestResponseLoggingMiddleware(ILogger<RequestResponseLoggingMiddleware> logger) : IMiddleware
 {
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         // Log the request
         var request = await FormatRequest(context.Request);

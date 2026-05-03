@@ -5,9 +5,7 @@ namespace GymApi.Infrastructure.UserManagement;
 /// <summary>
 /// This interface bridges the Domain IActiveUser with Orleans IGrain.
 /// </summary>
-public interface IUserGrain : IActiveUser, IGrainWithGuidKey
-{
-}
+public interface IUserGrain : IActiveUser, IGrainWithGuidKey;
 
 public sealed class UserGrain(
     [PersistentState("user", "sessionStore")] IPersistentState<UserState> userState)

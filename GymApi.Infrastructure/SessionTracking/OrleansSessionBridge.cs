@@ -5,9 +5,7 @@ namespace GymApi.Infrastructure.SessionTracking;
 /// <summary>
 /// This interface bridges the Domain IActiveSession with Orleans IGrain.
 /// </summary>
-public interface ITrainingSessionLifecycleGrain : ITrainingSessionLifecycle, IGrainWithGuidKey 
-{ 
-}
+public interface ITrainingSessionLifecycleGrain : ITrainingSessionLifecycle, IGrainWithGuidKey;
 
 public sealed class TrainingSessionLifecycleGrain(
     [PersistentState("session", "sessionStore")] IPersistentState<TrainingSession> sessionPersistentState,
@@ -18,7 +16,7 @@ public sealed class TrainingSessionLifecycleGrain(
 
     public async Task<TrainingSession> InitializeAsync(Guid userId, TrainingSession? parentSession = null, string? label = null)
     {
-        // Use the Grain's Guid as the TrainingSession Id to keep them in sync
+        // Use the Grain's Guid as the TrainingSession id to keep them in sync
         var sessionId = this.GetPrimaryKey();
         var session = TrainingSession.Create(userId, sessionId, label);
         
