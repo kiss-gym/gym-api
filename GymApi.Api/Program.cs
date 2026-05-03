@@ -77,6 +77,7 @@ builder.Services.AddSingleton<ITrainingSessionLifecycleProvider, OrleansTraining
 builder.Services.AddSingleton(new VersionProvider(VersionProvider.ReadVersionFromAssembly(), VersionProvider.GetRuntimeDescription()));
 
 builder.Services.AddTransient<ExceptionMiddleware>();
+builder.Services.AddSingleton<RequestResponseLoggingMiddleware>();
 
 var app = builder.Build();
 
@@ -85,7 +86,6 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseMiddleware<ExceptionMiddleware>();
-
 app.UseMiddleware<RequestResponseLoggingMiddleware>();
 
 if (!app.Environment.IsDevelopment())
