@@ -9,7 +9,7 @@ namespace GymApi.Api.Controllers;
 [ApiController]
 [Route("api/sessions")]
 [Produces("application/json")]
-public sealed class SessionTrackingController(ICurrentSessionService service) : ControllerBase
+public sealed class SessionTrackingController(ITrainingSessionLifecycleService lifecycleService) : ControllerBase
 {
     /// <summary>Create a new training session, optionally inheriting exercises.</summary>
     [HttpPost]
@@ -19,7 +19,7 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
         [FromBody] CreateSessionRequest request,
         CancellationToken ct)
     {
-        var session = await service.CreateSessionAsync(request.UserId, request.InheritFromSessionId, ct);
+        var session = await lifecycleService.CreateSessionAsync(request.UserId, request.InheritFromSessionId, request.Label, ct);
         return CreatedAtAction(nameof(GetSession), new { sessionId = session.Id },
             SessionResponse.From(session));
     }
@@ -30,7 +30,21 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSession(Guid sessionId, CancellationToken ct)
     {
-        var session = await service.GetSessionAsync(sessionId, ct);
+        var session = await lifecycleService.GetSessionAsync(sessionId, ct);
+        return Ok(SessionResponse.From(session));
+    }
+
+    /// <summary>Rename a session.</summary>
+    [HttpPatch("{sessionId:guid}")]
+    [ProducesResponseType<SessionResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RenameSession(
+        Guid sessionId,
+        [FromBody] RenameSessionRequest request,
+        CancellationToken ct)
+    {
+        var session = await lifecycleService.RenameSessionAsync(sessionId, request.Label, ct);
         return Ok(SessionResponse.From(session));
     }
 
@@ -51,7 +65,7 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
         var properties = request.Properties?
             .Select(p => new ExerciseProperty(p.Name, p.Value));
 
-        var exercise = await service.AddExerciseAsync(
+        var exercise = await lifecycleService.AddExerciseAsync(
             sessionId, request.AutoLabel, request.PhotoUrl, request.MaxEndAt, properties, ct);
 
         return StatusCode(StatusCodes.Status201Created, ExerciseResponse.From(exercise));
@@ -71,7 +85,7 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
         [FromBody] StartExerciseRequest request,
         CancellationToken ct)
     {
-        var exercise = await service.StartExerciseAsync(sessionId, exerciseId, request.MaxEndAt, ct);
+        var exercise = await lifecycleService.StartExerciseAsync(sessionId, exerciseId, request.MaxEndAt, ct);
         return Ok(ExerciseResponse.From(exercise));
     }
 
@@ -85,7 +99,7 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
         Guid exerciseId,
         CancellationToken ct)
     {
-        var exercise = await service.FinishExerciseAsync(sessionId, exerciseId, ct);
+        var exercise = await lifecycleService.FinishExerciseAsync(sessionId, exerciseId, ct);
         return Ok(ExerciseResponse.From(exercise));
     }
 
@@ -97,7 +111,7 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
     public async Task<IActionResult> RemoveExercise(
         Guid sessionId, Guid exerciseId, CancellationToken ct)
     {
-        await service.RemoveExerciseAsync(sessionId, exerciseId, ct);
+        await lifecycleService.RemoveExerciseAsync(sessionId, exerciseId, ct);
         return NoContent();
     }
 
@@ -108,7 +122,68 @@ public sealed class SessionTrackingController(ICurrentSessionService service) : 
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> FinishSession(Guid sessionId, CancellationToken ct)
     {
-        var session = await service.FinishSessionAsync(sessionId, ct);
+        var session = await lifecycleService.FinishSessionAsync(sessionId, ct);
         return Ok(SessionResponse.From(session));
+    }
+    
+    [HttpDelete("{sessionId:guid}")]
+    public async Task<IActionResult> DeleteSession(Guid sessionId, CancellationToken ct)
+    {
+        await lifecycleService.DeleteSessionAsync(sessionId, ct);
+        return NoContent(); // 204 No Content
+    }
+
+    /// <summary>Get sessions with optional filtering, sorting, and pagination.</summary>
+    /// <param name="userId">Filter by user ID.</param>
+    /// <param name="status">Filter by session status (Active or Finished).</param>
+    /// <param name="sort">
+    /// Sort criteria in format 'property[:asc|desc]'. 
+    /// Supported properties: finishedAt (default), createdAt.
+    /// Example: finishedAt:desc
+    /// </param>
+    /// <param name="page">Page number (default 1).</param>
+    /// <param name="pageSize">Items per page (default 10).</param>
+    /// <param name="ct"></param>
+    [HttpGet]
+    [ProducesResponseType<PagedResponse<SessionResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetSessions(
+        [FromQuery] Guid? userId,
+        [FromQuery] SessionStatus? status,
+        [FromQuery] string? sort,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
+    {
+        var sessions = await lifecycleService.GetSessionsAsync(userId, status, sort, page, pageSize, ct);
+        var totalCount = await lifecycleService.GetSessionsCountAsync(userId, status, ct);
+
+        var response = new PagedResponse<SessionResponse>(
+            sessions.Select(SessionResponse.From).ToList(),
+            page,
+            pageSize,
+            totalCount);
+
+        return Ok(response);
+    }
+
+    /// <summary>Get active sessions with optional filtering and pagination.</summary>
+    [HttpGet("active")]
+    [ProducesResponseType<PagedResponse<SessionResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetActiveSessions(
+        [FromQuery] Guid? userId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
+    {
+        var sessions = await lifecycleService.GetSessionsAsync(userId, SessionStatus.Active, null, page, pageSize, ct);
+        var totalCount = await lifecycleService.GetSessionsCountAsync(userId, SessionStatus.Active, ct);
+
+        var response = new PagedResponse<SessionResponse>(
+            sessions.Select(SessionResponse.From).ToList(),
+            page,
+            pageSize,
+            totalCount);
+
+        return Ok(response);
     }
 }

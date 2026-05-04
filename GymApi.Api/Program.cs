@@ -1,4 +1,5 @@
-using GymApi.Api.Infrastructure;
+using System.Text.Json.Serialization;
+using GymApi.Api.Infrastructure.Middleware;
 using GymApi.Api.Infrastructure.Swagger;
 using GymApi.Application.SessionTracking;
 using GymApi.Application.UserManagement;
@@ -7,11 +8,22 @@ using GymApi.Domain.UserManagement;
 using GymApi.Infrastructure.Environment;
 using GymApi.Infrastructure.SessionTracking;
 using GymApi.Infrastructure.UserManagement;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// Configure Orleans Silo
+builder.Host.UseOrleans(siloBuilder =>
+{
+    siloBuilder.UseLocalhostClustering();
+    siloBuilder.AddMemoryGrainStorage("sessionStore");
+});
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -35,51 +47,52 @@ builder.Services.AddSwaggerGen(c =>
     {
         if (api.GroupName != null)
         {
-            return new[] { api.GroupName };
+            return [api.GroupName];
         }
 
         var controllerName = api.ActionDescriptor.RouteValues["controller"];
         return controllerName switch
         {
-            "SessionTracking" => new[] { "Sessions" },
-            "User" => new[] { "Users" },
-            _ => new[] { controllerName ?? "Default" }
+            "SessionTracking" => ["Sessions" ],
+            "User" => [ "Users" ],
+            _ => ["GymApi"]
         };
     });
 
     c.DocInclusionPredicate((_, _) => true);
 });
 
-// User Management (generic subdomain)
+// User Management
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
 builder.Services.AddScoped<IUserContext, MockUserContext>();
+builder.Services.AddSingleton<IActiveUserProvider, OrleansActiveUserProvider>();
 
-// Session Tracking (core subdomain)
-builder.Services.AddScoped<ICurrentSessionService, CurrentSessionService>();
-builder.Services.AddSingleton<ISessionRepository, InMemorySessionRepository>();
+// Session Tracking
+builder.Services.AddSingleton<ITrainingSessionRepository, InMemoryTrainingSessionRepository>();
+builder.Services.AddScoped<ITrainingSessionLifecycleService, TrainingSessionLifecycleService>();
+builder.Services.AddSingleton<ITrainingSessionLifecycleProvider, OrleansTrainingSessionLifecycleProvider>();
 
 // Environment (supporting subdomain)
 builder.Services.AddSingleton(new VersionProvider(VersionProvider.ReadVersionFromAssembly(), VersionProvider.GetRuntimeDescription()));
 
 builder.Services.AddTransient<ExceptionMiddleware>();
+builder.Services.AddSingleton<RequestResponseLoggingMiddleware>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseMiddleware<ExceptionMiddleware>();
+app.UseMiddleware<RequestResponseLoggingMiddleware>();
 
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
 
-// Root endpoint: Combined HTML view for humans and JSON for machines/probes
 app.MapGet("/", (HttpContext context, VersionProvider versionProvider) =>
 {
     var info = new
@@ -91,7 +104,6 @@ app.MapGet("/", (HttpContext context, VersionProvider versionProvider) =>
         Docs = "/swagger"
     };
 
-    // If request asks for HTML (browser), give them a simple landing page
     if (context.Request.Headers.Accept.Any(h => h != null && h.Contains("text/html")))
     {
         return Results.Content(
@@ -105,7 +117,6 @@ app.MapGet("/", (HttpContext context, VersionProvider versionProvider) =>
             $"</body></html>", "text/html");
     }
 
-    // Otherwise (curl, HttpClient, etc.), return JSON
     return Results.Ok(info);
 });
 

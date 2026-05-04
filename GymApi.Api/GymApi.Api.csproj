@@ -16,7 +16,8 @@
   <Import Project="$(MSBuildThisFileDirectory)..\msbuildLib\Ed.CSharp.targets" />
 
   <ItemGroup>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
+    <PackageReference Include="Microsoft.Orleans.Server" Version="10.1.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,7 +30,6 @@
     <Exec Command="dotnet tool restore" StandardOutputImportance="low" />
     <MakeDir Directories="openapi" />
     
-    <Exec Command="dotnet swagger tofile --output openapi/openapi.yaml --yaml &quot;$(TargetPath)&quot; v1" 
-          EnvironmentVariables="DOTNET_ROLL_FORWARD=LatestMajor" />
+    <Exec Command="dotnet swagger tofile --output openapi/openapi.yaml --yaml &quot;$(TargetPath)&quot; v1" EnvironmentVariables="DOTNET_ROLL_FORWARD=LatestMajor" />
   </Target>
 </Project>

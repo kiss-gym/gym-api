@@ -167,4 +167,22 @@ public sealed class TrainingSessionTests
 
         Assert.That(exercise.MaxEndAt, Is.EqualTo(maxEnd));
     }
+
+    [Test]
+    public void Rename_UpdatesLabel()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        session.Rename("New Name");
+
+        Assert.That(session.Label, Is.EqualTo("New Name"));
+    }
+
+    [Test]
+    public void Rename_OnFinishedSession_ThrowsInvalidOperationException()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        session.Finish();
+
+        Assert.Throws<InvalidOperationException>(() => session.Rename("New Name"));
+    }
 }

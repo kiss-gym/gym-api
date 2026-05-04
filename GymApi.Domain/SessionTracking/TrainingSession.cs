@@ -9,6 +9,7 @@ public sealed class TrainingSession
 {
     public Guid Id { get; private init; }
     public Guid UserId { get; private set; }
+    public string? Label { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset? FinishedAt { get; private set; }
     public SessionStatus Status { get; private set; }
@@ -22,12 +23,13 @@ public sealed class TrainingSession
     }
 
     /// <summary>Creates a new, empty active session.</summary>
-    public static TrainingSession Create(Guid userId)
+    public static TrainingSession Create(Guid userId, Guid? sessionId = null, string? label = null)
     {
         return new TrainingSession
         {
-            Id = Guid.NewGuid(),
+            Id = sessionId ?? Guid.NewGuid(),
             UserId = userId,
+            Label = label,
             CreatedAt = DateTimeOffset.UtcNow,
             Status = SessionStatus.Active
         };
@@ -101,6 +103,12 @@ public sealed class TrainingSession
     {
         EnsureSessionIsActive();
         _exercises.Remove(FindExercise(exerciseId));
+    }
+
+    public void Rename(string label)
+    {
+        EnsureSessionIsActive();
+        Label = label;
     }
 
     /// <summary>Finishes the session. Auto-finishes any running exercise first.</summary>

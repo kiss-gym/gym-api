@@ -1,14 +1,15 @@
 namespace GymApi.Domain.SessionTracking;
 
 /// <summary>
-/// Application port for the Current Session Tracking bounded context.
-/// All mutation operations persist via ISessionRepository.
+/// Domain-level abstraction for a training session service.
 /// </summary>
-public interface ICurrentSessionService
+public interface ITrainingSessionLifecycleService
 {
+    // ReSharper disable UnusedParameter.Global
     Task<TrainingSession> CreateSessionAsync(
         Guid userId,
         Guid? inheritFromSessionId = null,
+        string? label = null,
         CancellationToken ct = default);
 
     Task<TrainingSession> GetSessionAsync(
@@ -39,7 +40,30 @@ public interface ICurrentSessionService
         Guid exerciseId,
         CancellationToken ct = default);
 
+    Task<TrainingSession> RenameSessionAsync(
+        Guid sessionId,
+        string label,
+        CancellationToken ct = default);
+
     Task<TrainingSession> FinishSessionAsync(
         Guid sessionId,
         CancellationToken ct = default);
+
+    Task<IReadOnlyList<TrainingSession>> GetSessionsAsync(
+        Guid? userId = null,
+        SessionStatus? status = null,
+        string? sort = null,
+        int? page = null,
+        int? pageSize = null,
+        CancellationToken ct = default);
+
+    Task<int> GetSessionsCountAsync(
+        Guid? userId = null,
+        SessionStatus? status = null,
+        CancellationToken ct = default);
+
+    Task DeleteSessionAsync(
+        Guid sessionId,
+        CancellationToken ct = default);
+    // ReSharper restore UnusedParameter.Global
 }

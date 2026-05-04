@@ -23,7 +23,7 @@ public sealed class ExerciseEntry
     {
     }
 
-    internal static ExerciseEntry CreatePending(
+    public static ExerciseEntry CreatePending(
         string autoLabel,
         string? photoUrl,
         IEnumerable<ExerciseProperty>? properties = null)

@@ -61,7 +61,7 @@ gymApiBackend -->|RESTful API / OpenAPI| consumerClients
 
 ### Bounded Contexts
 
-- **Current Session Tracking (Core):** Real-time tracking of the active session.
+- **Session Tracking (Core):** Real-time tracking of the active session.
 - **Session Management (Supporting):** Historical data, editing, and deletion.
 - **Exercise Library (Supporting):** Management of exercises, media, and custom properties.
 - **User Management (Generic):** Authentication and user profiles via Supabase.

@@ -1,4 +1,4 @@
-﻿using Microsoft.OpenApi.Models;
+﻿using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
@@ -8,9 +8,9 @@ namespace GymApi.Api.Infrastructure.Swagger;
 // ReSharper disable once ClassNeverInstantiated.Global
 public class RequiredSchemaFilter : ISchemaFilter
 {
-    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
+    public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
     {
-        if (schema.Properties == null)
+        if (schema is not OpenApiSchema concreteSchema || concreteSchema.Properties == null)
         {
             return;
         }
@@ -21,13 +21,17 @@ public class RequiredSchemaFilter : ISchemaFilter
             // ReSharper disable once InvertIf
             if (property.GetCustomAttribute<RequiredAttribute>() != null)
             {
-                var schemaProperty = schema.Properties.FirstOrDefault(p => p.Key.Equals(property.Name, StringComparison.OrdinalIgnoreCase));
+                var schemaProperty = concreteSchema.Properties.FirstOrDefault(p => p.Key.Equals(property.Name, StringComparison.OrdinalIgnoreCase));
                 // ReSharper disable once InvertIf
                 if (schemaProperty.Key != null)
                 {
-                    schemaProperty.Value.Nullable = false;
-                    schema.Required ??= new HashSet<string>();
-                    schema.Required.Add(schemaProperty.Key);
+                    if (schemaProperty.Value is OpenApiSchema propertySchema && propertySchema.Type.HasValue)
+                    {
+                        propertySchema.Type &= ~JsonSchemaType.Null;
+                    }
+                    
+                    concreteSchema.Required ??= new HashSet<string>();
+                    concreteSchema.Required.Add(schemaProperty.Key);
                 }
             }
         }
@@ -38,13 +42,19 @@ public class RequiredSchemaFilter : ISchemaFilter
                      .SelectMany(c => c.GetParameters())
                      .Where(p => p.GetCustomAttribute<RequiredAttribute>() != null))
         {
-            var schemaProperty = schema.Properties.FirstOrDefault(p => p.Key.Equals(parameter.Name, StringComparison.OrdinalIgnoreCase));
-            if (schemaProperty.Key != null)
+            var schemaProperty = concreteSchema.Properties.FirstOrDefault(p => p.Key.Equals(parameter.Name, StringComparison.OrdinalIgnoreCase));
+            if (schemaProperty.Key == null)
             {
-                schemaProperty.Value.Nullable = false;
-                schema.Required ??= new HashSet<string>();
-                schema.Required.Add(schemaProperty.Key);
+                continue;
             }
+
+            if (schemaProperty.Value is OpenApiSchema propertySchema && propertySchema.Type.HasValue)
+            {
+                propertySchema.Type &= ~JsonSchemaType.Null;
+            }
+            
+            concreteSchema.Required ??= new HashSet<string>();
+            concreteSchema.Required.Add(schemaProperty.Key);
         }
     }
 }

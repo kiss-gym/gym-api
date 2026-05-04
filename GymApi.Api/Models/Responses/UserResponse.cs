@@ -1,8 +1,9 @@
-﻿using GymApi.Domain.UserManagement;
+﻿using System.ComponentModel.DataAnnotations;
+using GymApi.Domain.UserManagement;
 
 namespace GymApi.Api.Models.Responses;
 
-public sealed record UserResponse(Guid Id, string Email, string Name)
+public sealed record UserResponse(Guid Id, [Required] string Email, [Required] string Name)
 {
     public static UserResponse From(User user)
     {
