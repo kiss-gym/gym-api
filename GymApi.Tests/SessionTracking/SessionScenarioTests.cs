@@ -1,6 +1,7 @@
 ﻿using GymApi.Application.SessionTracking;
 using GymApi.Domain.SessionTracking;
 using GymApi.Domain.UserManagement;
+using GymApi.Infrastructure.SessionTracking;
 using NSubstitute;
 using NUnit.Framework;
 
