@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using GymApi.Domain.SessionTracking;
 
-namespace GymApi.Infrastructure.SessionTracking;
+namespace GymApi.Tests.SessionTracking;
 
 public sealed class InMemoryTrainingSessionRepository : ITrainingSessionRepository
 {

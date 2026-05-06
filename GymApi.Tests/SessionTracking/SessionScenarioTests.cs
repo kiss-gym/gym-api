@@ -23,7 +23,7 @@ public sealed class SessionScenarioTests
         _sessionLifecycleProvider = Substitute.For<ITrainingSessionLifecycleProvider>();
         _userProvider = Substitute.For<IActiveUserProvider>();
         _userContext = Substitute.For<IUserContext>();
-        _repository = new GymApi.Infrastructure.SessionTracking.InMemoryTrainingSessionRepository();
+        _repository = new InMemoryTrainingSessionRepository();
         _sessionFakes.Clear();
         _userFakes.Clear();
         

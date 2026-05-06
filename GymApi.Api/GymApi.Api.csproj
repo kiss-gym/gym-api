@@ -16,6 +16,9 @@
   <Import Project="$(MSBuildThisFileDirectory)..\msbuildLib\Ed.CSharp.targets" />
 
   <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.11.0" />
+    <PackageReference Include="Microsoft.Orleans.Persistence.AzureStorage" Version="10.1.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
     <PackageReference Include="Microsoft.Orleans.Server" Version="10.1.0" />
   </ItemGroup>
