@@ -1,6 +1,4 @@
 using System.Text.Json.Serialization;
-using Azure.Data.Tables;
-using GymApi.Api.Infrastructure.Azure;
 using GymApi.Api.Infrastructure.Middleware;
 using GymApi.Api.Infrastructure.Swagger;
 using GymApi.Application.SessionTracking;
@@ -13,25 +11,6 @@ using GymApi.Infrastructure.UserManagement;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddSingleton<KeyVaultSecretRetriever>();
-
-// Configure Orleans Silo
-builder.Host.UseOrleans(siloBuilder =>
-{
-    siloBuilder.UseLocalhostClustering();
-
-    siloBuilder.AddAzureTableGrainStorage("sessionStore", optionsBuilder =>
-    {
-        optionsBuilder.Configure<KeyVaultSecretRetriever>((options, secretRetriever) =>
-        {
-            var storageConnectionString = secretRetriever.GetStorageConnectionString();
-            options.TableServiceClient = new TableServiceClient(storageConnectionString);
-
-            options.TableName = "OrleansGrainState";
-        });
-    });
-});
 
 builder.Services.AddControllers()
     .AddJsonOptions(options => { options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); });
@@ -76,12 +55,10 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
 builder.Services.AddScoped<IUserContext, MockUserContext>();
-builder.Services.AddSingleton<IActiveUserProvider, OrleansActiveUserProvider>();
 
 // Session Tracking
 builder.Services.AddSingleton<ITrainingSessionRepository, InMemoryTrainingSessionRepository>();
-builder.Services.AddScoped<ITrainingSessionLifecycleService, TrainingSessionLifecycleService>();
-builder.Services.AddSingleton<ITrainingSessionLifecycleProvider, OrleansTrainingSessionLifecycleProvider>();
+builder.Services.AddScoped<ITrainingSessionService, TrainingSessionService>();
 
 // Environment (supporting subdomain)
 builder.Services.AddSingleton(new VersionProvider(VersionProvider.ReadVersionFromAssembly(),

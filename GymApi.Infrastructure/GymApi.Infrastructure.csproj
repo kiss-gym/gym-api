@@ -16,9 +16,4 @@
   <ItemGroup>
     <ProjectReference Include="..\GymApi.Domain\GymApi.Domain.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Orleans.Sdk" Version="10.1.0" />
-    <PackageReference Include="Microsoft.Orleans.Server" Version="10.1.0" />
-  </ItemGroup>
 </Project>

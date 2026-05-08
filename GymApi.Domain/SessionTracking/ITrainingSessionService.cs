@@ -3,7 +3,7 @@ namespace GymApi.Domain.SessionTracking;
 /// <summary>
 /// Domain-level abstraction for a training session service.
 /// </summary>
-public interface ITrainingSessionLifecycleService
+public interface ITrainingSessionService
 {
     // ReSharper disable UnusedParameter.Global
     Task<TrainingSession> CreateSessionAsync(

@@ -25,7 +25,7 @@ public class RequiredSchemaFilter : ISchemaFilter
                 // ReSharper disable once InvertIf
                 if (schemaProperty.Key != null)
                 {
-                    if (schemaProperty.Value is OpenApiSchema propertySchema && propertySchema.Type.HasValue)
+                    if (schemaProperty.Value is OpenApiSchema { Type: not null } propertySchema)
                     {
                         propertySchema.Type &= ~JsonSchemaType.Null;
                     }
@@ -48,7 +48,7 @@ public class RequiredSchemaFilter : ISchemaFilter
                 continue;
             }
 
-            if (schemaProperty.Value is OpenApiSchema propertySchema && propertySchema.Type.HasValue)
+            if (schemaProperty.Value is OpenApiSchema { Type: not null } propertySchema)
             {
                 propertySchema.Type &= ~JsonSchemaType.Null;
             }

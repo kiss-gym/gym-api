@@ -9,7 +9,7 @@ namespace GymApi.Api.Controllers;
 [ApiController]
 [Route("api/sessions")]
 [Produces("application/json")]
-public sealed class SessionTrackingController(ITrainingSessionLifecycleService lifecycleService) : ControllerBase
+public sealed class SessionTrackingController(ITrainingSessionService service) : ControllerBase
 {
     /// <summary>Create a new training session, optionally inheriting exercises.</summary>
     [HttpPost]
@@ -19,7 +19,7 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
         [FromBody] CreateSessionRequest request,
         CancellationToken ct)
     {
-        var session = await lifecycleService.CreateSessionAsync(request.UserId, request.InheritFromSessionId, request.Label, ct);
+        var session = await service.CreateSessionAsync(request.UserId, request.InheritFromSessionId, request.Label, ct);
         return CreatedAtAction(nameof(GetSession), new { sessionId = session.Id },
             SessionResponse.From(session));
     }
@@ -30,7 +30,7 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSession(Guid sessionId, CancellationToken ct)
     {
-        var session = await lifecycleService.GetSessionAsync(sessionId, ct);
+        var session = await service.GetSessionAsync(sessionId, ct);
         return Ok(SessionResponse.From(session));
     }
 
@@ -44,7 +44,7 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
         [FromBody] RenameSessionRequest request,
         CancellationToken ct)
     {
-        var session = await lifecycleService.RenameSessionAsync(sessionId, request.Label, ct);
+        var session = await service.RenameSessionAsync(sessionId, request.Label, ct);
         return Ok(SessionResponse.From(session));
     }
 
@@ -65,7 +65,7 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
         var properties = request.Properties?
             .Select(p => new ExerciseProperty(p.Name, p.Value));
 
-        var exercise = await lifecycleService.AddExerciseAsync(
+        var exercise = await service.AddExerciseAsync(
             sessionId, request.AutoLabel, request.PhotoUrl, request.MaxEndAt, properties, ct);
 
         return StatusCode(StatusCodes.Status201Created, ExerciseResponse.From(exercise));
@@ -85,7 +85,7 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
         [FromBody] StartExerciseRequest request,
         CancellationToken ct)
     {
-        var exercise = await lifecycleService.StartExerciseAsync(sessionId, exerciseId, request.MaxEndAt, ct);
+        var exercise = await service.StartExerciseAsync(sessionId, exerciseId, request.MaxEndAt, ct);
         return Ok(ExerciseResponse.From(exercise));
     }
 
@@ -99,7 +99,7 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
         Guid exerciseId,
         CancellationToken ct)
     {
-        var exercise = await lifecycleService.FinishExerciseAsync(sessionId, exerciseId, ct);
+        var exercise = await service.FinishExerciseAsync(sessionId, exerciseId, ct);
         return Ok(ExerciseResponse.From(exercise));
     }
 
@@ -111,7 +111,7 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
     public async Task<IActionResult> RemoveExercise(
         Guid sessionId, Guid exerciseId, CancellationToken ct)
     {
-        await lifecycleService.RemoveExerciseAsync(sessionId, exerciseId, ct);
+        await service.RemoveExerciseAsync(sessionId, exerciseId, ct);
         return NoContent();
     }
 
@@ -122,14 +122,14 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> FinishSession(Guid sessionId, CancellationToken ct)
     {
-        var session = await lifecycleService.FinishSessionAsync(sessionId, ct);
+        var session = await service.FinishSessionAsync(sessionId, ct);
         return Ok(SessionResponse.From(session));
     }
     
     [HttpDelete("{sessionId:guid}")]
     public async Task<IActionResult> DeleteSession(Guid sessionId, CancellationToken ct)
     {
-        await lifecycleService.DeleteSessionAsync(sessionId, ct);
+        await service.DeleteSessionAsync(sessionId, ct);
         return NoContent(); // 204 No Content
     }
 
@@ -154,8 +154,8 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var sessions = await lifecycleService.GetSessionsAsync(userId, status, sort, page, pageSize, ct);
-        var totalCount = await lifecycleService.GetSessionsCountAsync(userId, status, ct);
+        var sessions = await service.GetSessionsAsync(userId, status, sort, page, pageSize, ct);
+        var totalCount = await service.GetSessionsCountAsync(userId, status, ct);
 
         var response = new PagedResponse<SessionResponse>(
             sessions.Select(SessionResponse.From).ToList(),
@@ -175,8 +175,8 @@ public sealed class SessionTrackingController(ITrainingSessionLifecycleService l
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var sessions = await lifecycleService.GetSessionsAsync(userId, SessionStatus.Active, null, page, pageSize, ct);
-        var totalCount = await lifecycleService.GetSessionsCountAsync(userId, SessionStatus.Active, ct);
+        var sessions = await service.GetSessionsAsync(userId, SessionStatus.Active, null, page, pageSize, ct);
+        var totalCount = await service.GetSessionsCountAsync(userId, SessionStatus.Active, ct);
 
         var response = new PagedResponse<SessionResponse>(
             sessions.Select(SessionResponse.From).ToList(),

@@ -19,18 +19,54 @@ public class RequestResponseLoggingMiddleware(ILogger<RequestResponseLoggingMidd
         // Copy the original response body stream
         var originalBodyStream = context.Response.Body;
 
-        using var responseBody = new MemoryStream();
+        // Create a new memory stream to temporarily buffer the response
+        var responseBody = new MemoryStream();
         context.Response.Body = responseBody;
 
-        // Call the next middleware in the pipeline
-        await next(context);
+        try
+        {
+            // Call the next middleware in the pipeline
+            await next(context);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            if (context.Response.HasStarted)
+            {
+                logger.LogWarning("The response has already started, unable to write error response.");
+                // Re-throw the exception to let the server handle it (e.g., Kestrel will close the connection)
+                throw;
+            }
+            logger.LogError(ex, "Unhandled exception");
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            await context.Response.WriteAsJsonAsync(new { error = "An unexpected error occurred." });
+        }
+        finally
+        {
+            // Log the response
+            var response = await FormatResponse(context.Response);
+            logger.LogInformation("Response: {StatusCode} {Response}", context.Response.StatusCode, response);
 
-        // Log the response
-        var response = await FormatResponse(context.Response);
-        logger.LogInformation("Response: {StatusCode} {Response}", context.Response.StatusCode, response);
+            // Restore the original response body stream
+            context.Response.Body = originalBodyStream;
 
-        // Copy the contents of the new memory stream (which contains the response) to the original stream
-        await responseBody.CopyToAsync(originalBodyStream);
+            // Copy the contents of the new memory stream (which contains the response) to the original stream
+            responseBody.Seek(0, SeekOrigin.Begin); // Ensure the memory stream is at the beginning
+            await responseBody.CopyToAsync(originalBodyStream);
+            
+            // It's important to dispose the MemoryStream here, after its content has been copied
+            // and the original stream has been restored.
+            await responseBody.DisposeAsync();
+        }
     }
 
     private static async Task<string> FormatRequest(HttpRequest request)
@@ -53,14 +89,15 @@ public class RequestResponseLoggingMiddleware(ILogger<RequestResponseLoggingMidd
 
     private static async Task<string> FormatResponse(HttpResponse response)
     {
-        if (response.Body.CanSeek)
+        if (!response.Body.CanSeek)
         {
-            response.Body.Seek(0, SeekOrigin.Begin);
-            var text = await new StreamReader(response.Body).ReadToEndAsync();
-            response.Body.Seek(0, SeekOrigin.Begin);
-            return text;
+            return "[Response body is not seekable]";
         }
 
-        return "[Response body is not seekable]";
+        response.Body.Seek(0, SeekOrigin.Begin);
+        var text = await new StreamReader(response.Body).ReadToEndAsync();
+        response.Body.Seek(0, SeekOrigin.Begin);
+        return text;
+
     }
 }
