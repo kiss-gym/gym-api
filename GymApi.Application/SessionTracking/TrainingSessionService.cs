@@ -39,7 +39,7 @@ public sealed class TrainingSessionService(
         var session = await repository.GetByIdAsync(sessionId, ct)
                       ?? throw new KeyNotFoundException($"Session {sessionId} not found.");
 
-        var _ = userContext;
+        _ = userContext;
         // // Authorization check: User can only access their own sessions
         // if (userContext.IsAuthenticated && session.UserId != userContext.UserId)
         // {
@@ -53,12 +53,11 @@ public sealed class TrainingSessionService(
         Guid sessionId,
         string autoLabel,
         string? photoUrl,
-        DateTimeOffset? maxEndAt,
         IEnumerable<ExerciseProperty>? properties = null,
         CancellationToken ct = default)
     {
         var session = await GetSessionAsync(sessionId, ct);
-        var exercise = session.AddExercise(autoLabel, photoUrl, maxEndAt, properties);
+        var exercise = session.AddExercise(autoLabel, photoUrl);
         await repository.SaveAsync(session, ct);
         return exercise;
     }
@@ -66,11 +65,10 @@ public sealed class TrainingSessionService(
     public async Task<ExerciseEntry> StartExerciseAsync(
         Guid sessionId,
         Guid exerciseId,
-        DateTimeOffset? maxEndAt = null,
         CancellationToken ct = default)
     {
         var session = await GetSessionAsync(sessionId, ct);
-        var exercise = session.StartExercise(exerciseId, maxEndAt);
+        var exercise = session.StartExercise(exerciseId);
         await repository.SaveAsync(session, ct);
         return exercise;
     }

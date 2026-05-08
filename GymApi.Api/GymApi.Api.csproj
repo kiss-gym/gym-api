@@ -27,7 +27,7 @@
     <ProjectReference Include="..\GymApi.Infrastructure\GymApi.Infrastructure.csproj" />
   </ItemGroup>
 
-  <Target Name="GenerateOpenApiSpecs" AfterTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Debug'">
+  <Target Name="GenerateOpenApiSpecs" AfterTargets="PostBuildEvent">
     <Exec Command="dotnet tool restore" StandardOutputImportance="low" />
     <MakeDir Directories="openapi" />
     

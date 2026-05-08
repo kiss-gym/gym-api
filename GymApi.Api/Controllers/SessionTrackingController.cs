@@ -66,7 +66,7 @@ public sealed class SessionTrackingController(ITrainingSessionService service) :
             .Select(p => new ExerciseProperty(p.Name, p.Value));
 
         var exercise = await service.AddExerciseAsync(
-            sessionId, request.AutoLabel, request.PhotoUrl, request.MaxEndAt, properties, ct);
+            sessionId, request.AutoLabel, request.PhotoUrl, properties, ct);
 
         return StatusCode(StatusCodes.Status201Created, ExerciseResponse.From(exercise));
     }
@@ -85,7 +85,7 @@ public sealed class SessionTrackingController(ITrainingSessionService service) :
         [FromBody] StartExerciseRequest request,
         CancellationToken ct)
     {
-        var exercise = await service.StartExerciseAsync(sessionId, exerciseId, request.MaxEndAt, ct);
+        var exercise = await service.StartExerciseAsync(sessionId, exerciseId, ct);
         return Ok(ExerciseResponse.From(exercise));
     }
 

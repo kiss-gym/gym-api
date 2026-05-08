@@ -10,7 +10,6 @@ public sealed record ExerciseResponse(
     [Required] string AutoLabel,
     string? PhotoUrl,
     DateTimeOffset? StartedAt,
-    DateTimeOffset? MaxEndAt,
     DateTimeOffset? RealEndAt,
     [Required] string Status,
     [Required] IReadOnlyList<ExercisePropertyResponse> Properties)
@@ -22,7 +21,6 @@ public sealed record ExerciseResponse(
             e.AutoLabel,
             e.PhotoUrl,
             e.StartedAt,
-            e.MaxEndAt,
             e.RealEndAt,
             e.IsPending ? "Pending" : e.IsRunning ? "Running" : "Finished",
             e.Properties.Select(p => new ExercisePropertyResponse(p.Name, p.Value)).ToList());

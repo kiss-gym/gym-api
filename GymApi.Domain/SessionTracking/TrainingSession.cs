@@ -57,20 +57,19 @@ public sealed class TrainingSession
     public ExerciseEntry AddExercise(
         string autoLabel,
         string? photoUrl,
-        DateTimeOffset? maxEndAt,
         IEnumerable<ExerciseProperty>? properties = null)
     {
         EnsureSessionIsActive();
         AutoFinishRunningExercise();
 
         var exercise = ExerciseEntry.CreatePending(autoLabel, photoUrl, properties);
-        exercise.Start(maxEndAt);
+        exercise.Start();
         _exercises.Add(exercise);
         return exercise;
     }
 
     /// <summary>Starts a pending exercise (inherited from a previous session), auto-finishing any running exercise.</summary>
-    public ExerciseEntry StartExercise(Guid exerciseId, DateTimeOffset? maxEndAt = null)
+    public ExerciseEntry StartExercise(Guid exerciseId)
     {
         EnsureSessionIsActive();
         var exercise = FindExercise(exerciseId);
@@ -81,7 +80,7 @@ public sealed class TrainingSession
         }
 
         AutoFinishRunningExercise();
-        exercise.Start(maxEndAt);
+        exercise.Start();
         return exercise;
     }
 

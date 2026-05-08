@@ -1,6 +1,6 @@
 I'd like to make an draft architecture for gym training (freeware),
 where each training session, a sequence of exercise (exercise:
-picture or foto, start / max end / real end time, automatic label,
+picture or foto, start / end time, automatic label,
 ad-hoc-defined custom name/value property list) can be inherited by the next training sequence
 (no explicit training plans).
 
@@ -26,11 +26,3 @@ The use case is:
 - Add/Start exercise (each exercise finishes previous and can be autofinished),
 - Remove exercise,
 - Finish session.
-
-Your task-1 was: suggest a C# project structure that contains:
-- simple C# interface 
-- Unit Tests for C# interface (use NUnit)
-- the covering OpenAPI definitions
-- OpenAPI implementation
-Always following SOLID and KISS.
-Task 1 is done.

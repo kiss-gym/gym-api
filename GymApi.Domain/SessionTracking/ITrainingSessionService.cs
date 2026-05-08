@@ -20,14 +20,12 @@ public interface ITrainingSessionService
         Guid sessionId,
         string autoLabel,
         string? photoUrl,
-        DateTimeOffset? maxEndAt,
         IEnumerable<ExerciseProperty>? properties = null,
         CancellationToken ct = default);
 
     Task<ExerciseEntry> StartExerciseAsync(
         Guid sessionId,
         Guid exerciseId,
-        DateTimeOffset? maxEndAt = null,
         CancellationToken ct = default);
 
     Task<ExerciseEntry> FinishExerciseAsync(

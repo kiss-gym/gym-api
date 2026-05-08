@@ -11,7 +11,6 @@ public sealed class ExerciseEntry
     public string AutoLabel { get; private init; } = "";
     public string? PhotoUrl { get; private set; }
     public DateTimeOffset? StartedAt { get; private set; }
-    public DateTimeOffset? MaxEndAt { get; private set; }
     public DateTimeOffset? RealEndAt { get; private set; }
     public IReadOnlyList<ExerciseProperty> Properties { get; private set; } = [];
 
@@ -37,7 +36,7 @@ public sealed class ExerciseEntry
         };
     }
 
-    internal void Start(DateTimeOffset? maxEndAt = null)
+    internal void Start()
     {
         if (!IsPending)
         {
@@ -45,7 +44,6 @@ public sealed class ExerciseEntry
         }
 
         StartedAt = DateTimeOffset.UtcNow;
-        MaxEndAt = maxEndAt;
     }
 
     internal void Finish()

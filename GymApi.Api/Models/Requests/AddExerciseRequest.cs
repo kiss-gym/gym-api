@@ -10,5 +10,4 @@ public sealed record ExercisePropertyDto(
 public sealed record AddExerciseRequest(
     [Required] string AutoLabel,
     string? PhotoUrl = null,
-    DateTimeOffset? MaxEndAt = null,
     IReadOnlyList<ExercisePropertyDto>? Properties = null);

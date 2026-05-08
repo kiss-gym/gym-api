@@ -489,10 +489,6 @@ components:
         photoUrl:
           type: string
           nullable: true
-        maxEndAt:
-          type: string
-          format: date-time
-          nullable: true
         properties:
           type: array
           items:
@@ -553,10 +549,6 @@ components:
           type: string
           nullable: true
         startedAt:
-          type: string
-          format: date-time
-          nullable: true
-        maxEndAt:
           type: string
           format: date-time
           nullable: true
@@ -681,11 +673,6 @@ components:
       type: string
     StartExerciseRequest:
       type: object
-      properties:
-        maxEndAt:
-          type: string
-          format: date-time
-          nullable: true
       additionalProperties: false
     UserResponse:
       required:

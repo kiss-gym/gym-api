@@ -33,7 +33,7 @@ public sealed class SessionScenarioTests
 
         // 1. Create a previous session
         var prevSession = await _service.CreateSessionAsync(userId);
-        await _service.AddExerciseAsync(prevSession.Id, "Old Squat", null, null);
+        await _service.AddExerciseAsync(prevSession.Id, "Old Squat", null);
         await _service.FinishSessionAsync(prevSession.Id);
 
         // 2. Create a new session inheriting from previous
