@@ -35,8 +35,8 @@ public sealed class TrainingSession
         };
     }
 
-    /// <summary>Populates the session with exercises from a previous session as "pending".</summary>
-    public void InheritFrom(TrainingSession previousSession)
+    /// <summary>Populates the session with exercises from a parent session.</summary>
+    public void InheritFrom(TrainingSession parentSession)
     {
         EnsureSessionIsActive();
 
@@ -45,9 +45,9 @@ public sealed class TrainingSession
             throw new InvalidOperationException("Can only inherit exercises into an empty session.");
         }
 
-        InheritedFromSessionId = previousSession.Id;
+        InheritedFromSessionId = parentSession.Id;
 
-        foreach (var ex in previousSession.Exercises)
+        foreach (var ex in parentSession.Exercises)
         {
             _exercises.Add(ExerciseEntry.CreatePending(ex.AutoLabel, ex.PhotoUrl, ex.Properties));
         }
@@ -68,7 +68,7 @@ public sealed class TrainingSession
         return exercise;
     }
 
-    /// <summary>Starts a pending exercise (inherited from a previous session), auto-finishing any running exercise.</summary>
+    /// <summary>Starts a pending exercise (pending exercise are inherited from a parent session), auto-finishing any running exercise.</summary>
     public ExerciseEntry StartExercise(Guid exerciseId)
     {
         EnsureSessionIsActive();

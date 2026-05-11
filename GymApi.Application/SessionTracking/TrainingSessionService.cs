@@ -23,10 +23,10 @@ public sealed class TrainingSessionService(
 
         if (inheritFromSessionId.HasValue)
         {
-            var previous = await repository.GetByIdAsync(inheritFromSessionId.Value, ct);
-            if (previous != null)
+            var parent = await repository.GetByIdAsync(inheritFromSessionId.Value, ct);
+            if (parent != null)
             {
-                session.InheritFrom(previous);
+                session.InheritFrom(parent);
             }
         }
 
