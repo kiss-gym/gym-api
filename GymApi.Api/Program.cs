@@ -69,8 +69,10 @@ builder.Services.AddSingleton<RequestResponseLoggingMiddleware>();
 
 var app = builder.Build();
 
-
-app.UseSwagger();
+app.UseSwagger(options =>
+{
+    options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_1;
+});
 app.UseSwaggerUI();
 
 app.UseMiddleware<ExceptionMiddleware>();

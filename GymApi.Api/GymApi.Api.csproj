@@ -32,5 +32,8 @@
     <MakeDir Directories="openapi" />
     
     <Exec Command="dotnet swagger tofile --output openapi/openapi.yaml --yaml &quot;$(TargetPath)&quot; v1" EnvironmentVariables="DOTNET_ROLL_FORWARD=LatestMajor" />
+    
+    <!-- Patch OpenAPI version from 3.0.4 to 3.1.0, if openapi: 3.0.4 is the first line -->
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)PatchOpenApi.ps1&quot; -FilePath &quot;$(MSBuildThisFileDirectory)openapi/openapi.yaml&quot;" />
   </Target>
 </Project>
