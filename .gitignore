@@ -281,3 +281,6 @@ NuGet.Config
 .idea
 
 /.claude/settings.local.json
+-e 
+# Local dev secrets
+GymApi.Api/appsettings.Development.json

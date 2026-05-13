@@ -5,13 +5,33 @@ using GymApi.Application.SessionTracking;
 using GymApi.Application.UserManagement;
 using GymApi.Domain.SessionTracking;
 using GymApi.Domain.UserManagement;
+using GymApi.Infrastructure;
 using GymApi.Infrastructure.Environment;
 using GymApi.Infrastructure.SessionTracking;
 using GymApi.Infrastructure.UserManagement;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ── Database ────────────────────────────────────────────────────────────────
+builder.Services.AddDbContext<GymApiDbContext>(options =>
+    options.UseNpgsql(builder.Configuration["Supabase:ConnectionString"]));
+
+// ── Authentication ──────────────────────────────────────────────────────────
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        // Supabase exposes JWKS at {Url}/auth/v1/.well-known/jwks.json
+        // Authority triggers automatic JWKS discovery — no secret needed
+        options.Authority = $"{builder.Configuration["Supabase:Url"]}/auth/v1";
+        options.Audience = "authenticated";
+    });
+
+builder.Services.AddAuthorization();
+
+// ── Controllers ─────────────────────────────────────────────────────────────
 builder.Services.AddControllers()
     .AddJsonOptions(options => { options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); });
 builder.Services.AddEndpointsApiExplorer();
@@ -51,16 +71,17 @@ builder.Services.AddSwaggerGen(c =>
 
     c.DocInclusionPredicate((_, _) => true);
 });
-// User Management
+
+// ── User Management ─────────────────────────────────────────────────────────
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
 builder.Services.AddScoped<IUserContext, MockUserContext>();
 
-// Session Tracking
+// ── Session Tracking ────────────────────────────────────────────────────────
 builder.Services.AddSingleton<ITrainingSessionRepository, InMemoryTrainingSessionRepository>();
 builder.Services.AddScoped<ITrainingSessionService, TrainingSessionService>();
 
-// Environment (supporting subdomain)
+// ── Infrastructure ──────────────────────────────────────────────────────────
 builder.Services.AddSingleton(new VersionProvider(VersionProvider.ReadVersionFromAssembly(),
     VersionProvider.GetRuntimeDescription()));
 
@@ -82,6 +103,10 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+
+// ── Auth middleware must come before MapControllers ─────────────────────────
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/", (HttpContext context, VersionProvider versionProvider) =>
 {
