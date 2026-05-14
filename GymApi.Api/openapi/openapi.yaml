@@ -428,7 +428,7 @@ paths:
     post:
       tags:
         - Users
-      summary: "Login a user (Mocked for development).\r\nSimulates authentication by associating the session with an email.\r\nSets the user context for subsequent requests.\r\nIn production, the client will authenticate directly with Supabase."
+      summary: "Login a user.\r\nThe client will authenticate directly with Supabase."
       requestBody:
         content:
           application/json:

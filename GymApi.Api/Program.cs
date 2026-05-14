@@ -154,3 +154,6 @@ app.MapGet("/", (HttpContext context, VersionProvider versionProvider) =>
 
 app.MapControllers();
 app.Run();
+
+// Required for WebApplicationFactory in integration tests
+public partial class Program { }

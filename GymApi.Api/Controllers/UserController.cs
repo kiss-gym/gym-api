@@ -13,8 +13,7 @@ namespace GymApi.Api.Controllers;
 [Produces("application/json")]
 public sealed class UserController(
     IUserService userService,
-    IUserRepository userRepository,
-    IUserContext userContext) : ControllerBase
+    IUserRepository userRepository) : ControllerBase
 {
     /// <summary>Register a new user.</summary>
     [HttpPost("register")]
@@ -27,10 +26,8 @@ public sealed class UserController(
     }
 
     /// <summary>
-    /// Login a user (Mocked for development).
-    /// Simulates authentication by associating the session with an email.
-    /// Sets the user context for subsequent requests.
-    /// In production, the client will authenticate directly with Supabase.
+    /// Login a user.
+    /// The client will authenticate directly with Supabase.
     /// </summary>
     [HttpPost("login")]
     [ProducesResponseType<UserResponse>(StatusCodes.Status200OK)]
@@ -43,12 +40,7 @@ public sealed class UserController(
         {
             return NotFound("User not found.");
         }
-
-        if (userContext is MockUserContext mock)
-        {
-            mock.UserId = user.Id;
-        }
-
+        
         return Ok(UserResponse.From(user));
     }
 
