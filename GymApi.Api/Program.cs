@@ -1,3 +1,4 @@
+using Npgsql;
 using System.Text.Json.Serialization;
 using GymApi.Api.Infrastructure.Middleware;
 using GymApi.Api.Infrastructure.Swagger;
@@ -16,8 +17,11 @@ using Microsoft.OpenApi;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Database ────────────────────────────────────────────────────────────────
+var npgsqlDataSource = new NpgsqlDataSourceBuilder(builder.Configuration["Supabase:ConnectionString"])
+    .EnableDynamicJson()
+    .Build();
 builder.Services.AddDbContext<GymApiDbContext>(options =>
-    options.UseNpgsql(builder.Configuration["Supabase:ConnectionString"]));
+    options.UseNpgsql(npgsqlDataSource));
 
 // ── Authentication ──────────────────────────────────────────────────────────
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

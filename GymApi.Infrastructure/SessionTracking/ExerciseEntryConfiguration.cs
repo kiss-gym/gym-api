@@ -34,8 +34,8 @@ internal sealed class ExerciseEntryConfiguration : IEntityTypeConfiguration<Exer
         builder.Property(e => e.RealEndAt)
             .HasColumnName("real_end_at");
 
-        // ExerciseProperty is a sealed record — serialised as a jsonb array.
-        // EF 10 maps IReadOnlyList<record> to JSON natively via primitive collection.
+        // ExerciseProperty is a sealed record — serialized as a jsonb array.
+        // EF 10 maps IReadOnlyList<record> to JSON natively via a primitive collection.
         builder.Property(e => e.Properties)
             .HasColumnName("properties")
             .HasColumnType("jsonb")
