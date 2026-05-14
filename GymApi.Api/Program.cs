@@ -30,7 +30,7 @@ if (!string.IsNullOrWhiteSpace(connectionString))
 }
 else
 {
-    // Fallback for swagger CLI / build-time introspection — no DB needed
+    // Fallback for swagger CLI / build-time introspection — no real DB needed
     builder.Services.AddDbContext<GymApiDbContext>(options =>
         options.UseNpgsql());
 }
@@ -89,12 +89,13 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ── User Management ─────────────────────────────────────────────────────────
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
-builder.Services.AddScoped<IUserContext, MockUserContext>();
+builder.Services.AddScoped<IUserRepository, SupabaseUserRepository>();
+builder.Services.AddScoped<IUserContext, JwtUserContext>();
 
 // ── Session Tracking ────────────────────────────────────────────────────────
-builder.Services.AddSingleton<ITrainingSessionRepository, InMemoryTrainingSessionRepository>();
+builder.Services.AddScoped<ITrainingSessionRepository, SupabaseTrainingSessionRepository>();
 builder.Services.AddScoped<ITrainingSessionService, TrainingSessionService>();
 
 // ── Infrastructure ──────────────────────────────────────────────────────────
