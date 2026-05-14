@@ -1,4 +1,3 @@
-using GymApi.Application.SessionTracking;
 using GymApi.Application.UserManagement;
 using GymApi.Domain.SessionTracking;
 using GymApi.Domain.UserManagement;

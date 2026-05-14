@@ -1,12 +1,10 @@
 using GymApi.Domain.SessionTracking;
-using GymApi.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymApi.Infrastructure.SessionTracking;
 
 /// <summary>
 /// Supabase/Postgres implementation of ITrainingSessionRepository using EF Core.
-/// Replaces InMemoryTrainingSessionRepository in production.
 /// </summary>
 public sealed class SupabaseTrainingSessionRepository(GymApiDbContext db) : ITrainingSessionRepository
 {

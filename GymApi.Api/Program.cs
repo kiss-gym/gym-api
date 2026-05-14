@@ -156,4 +156,6 @@ app.MapControllers();
 app.Run();
 
 // Required for WebApplicationFactory in integration tests
+#pragma warning disable ASP0027
 public partial class Program { }
+#pragma warning restore ASP0027

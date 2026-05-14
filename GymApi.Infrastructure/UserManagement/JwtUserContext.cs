@@ -22,7 +22,9 @@ public sealed class JwtUserContext(IHttpContextAccessor httpContextAccessor) : I
                 ?.Value;
 
             if (sub is null)
+            {
                 return null;
+            }
 
             return Guid.TryParse(sub, out var id) ? id : null;
         }

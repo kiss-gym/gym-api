@@ -1,5 +1,4 @@
 using GymApi.Domain.UserManagement;
-using GymApi.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymApi.Infrastructure.UserManagement;
@@ -21,7 +20,9 @@ public sealed class SupabaseUserRepository(GymApiDbContext db) : IUserRepository
     {
         return await db.Users
             .AsNoTracking()
+#pragma warning disable CA1862
             .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower(), ct);
+#pragma warning restore CA1862
     }
 
     public async Task SaveAsync(User user, CancellationToken ct = default)

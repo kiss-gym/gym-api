@@ -2,7 +2,6 @@
 using GymApi.Api.Models.Responses;
 using GymApi.Application.UserManagement;
 using GymApi.Domain.UserManagement;
-using GymApi.Infrastructure.UserManagement;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GymApi.Api.Controllers;
