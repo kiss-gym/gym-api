@@ -24,25 +24,6 @@ public sealed class UserController(
         return Ok(UserResponse.From(user));
     }
 
-    /// <summary>
-    /// Login a user.
-    /// The client will authenticate directly with Supabase.
-    /// </summary>
-    [HttpPost("login")]
-    [ProducesResponseType<UserResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken ct)
-    {
-        var user = await userRepository.GetByEmailAsync(request.Email, ct);
-        if (user == null)
-        {
-            return NotFound("User not found.");
-        }
-        
-        return Ok(UserResponse.From(user));
-    }
-
     /// <summary>Get the current authenticated user profile.</summary>
     [HttpGet("me")]
     [ProducesResponseType<UserResponse>(StatusCodes.Status200OK)]

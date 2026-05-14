@@ -431,41 +431,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
-  /api/users/login:
-    post:
-      tags:
-        - Users
-      summary: "Login a user.\r\nThe client will authenticate directly with Supabase."
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-          text/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-          application/*+json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
   /api/users/me:
     get:
       tags:
@@ -569,14 +534,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ExercisePropertyResponse'
-      additionalProperties: false
-    LoginRequest:
-      required:
-        - email
-      type: object
-      properties:
-        email:
-          type: string
       additionalProperties: false
     ProblemDetails:
       type: object

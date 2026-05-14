@@ -5,10 +5,8 @@ using Microsoft.AspNetCore.Http;
 namespace GymApi.Infrastructure.UserManagement;
 
 /// <summary>
-/// Production implementation of IUserContext.
 /// Reads the current user's ID from the JWT sub claim
 /// validated by ASP.NET Core's JwtBearer middleware.
-/// Replaces MockUserContext in production.
 /// </summary>
 public sealed class JwtUserContext(IHttpContextAccessor httpContextAccessor) : IUserContext
 {
