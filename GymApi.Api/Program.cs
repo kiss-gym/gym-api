@@ -17,11 +17,23 @@ using Microsoft.OpenApi;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Database ────────────────────────────────────────────────────────────────
-var npgsqlDataSource = new NpgsqlDataSourceBuilder(builder.Configuration["Supabase:ConnectionString"])
-    .EnableDynamicJson()
-    .Build();
-builder.Services.AddDbContext<GymApiDbContext>(options =>
-    options.UseNpgsql(npgsqlDataSource));
+// Connection string is absent during swagger CLI generation — guard to avoid crash
+var connectionString = builder.Configuration["Supabase:ConnectionString"];
+if (!string.IsNullOrWhiteSpace(connectionString))
+{
+    // EnableDynamicJson is required for Npgsql 8+ to serialize List<T> → jsonb
+    var npgsqlDataSource = new NpgsqlDataSourceBuilder(connectionString)
+        .EnableDynamicJson()
+        .Build();
+    builder.Services.AddDbContext<GymApiDbContext>(options =>
+        options.UseNpgsql(npgsqlDataSource));
+}
+else
+{
+    // Fallback for swagger CLI / build-time introspection — no DB needed
+    builder.Services.AddDbContext<GymApiDbContext>(options =>
+        options.UseNpgsql());
+}
 
 // ── Authentication ──────────────────────────────────────────────────────────
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
