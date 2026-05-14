@@ -57,7 +57,7 @@ public sealed class TrainingSessionService(
         CancellationToken ct = default)
     {
         var session = await GetSessionAsync(sessionId, ct);
-        var exercise = session.AddExercise(autoLabel, photoUrl);
+        var exercise = session.AddExercise(autoLabel, photoUrl, properties);
         await repository.SaveAsync(session, ct);
         return exercise;
     }
