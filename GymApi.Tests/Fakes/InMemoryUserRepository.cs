@@ -1,7 +1,7 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using GymApi.Domain.UserManagement;
 
-namespace GymApi.Infrastructure.UserManagement;
+namespace GymApi.Tests.Fakes;
 
 public sealed class InMemoryUserRepository : IUserRepository
 {

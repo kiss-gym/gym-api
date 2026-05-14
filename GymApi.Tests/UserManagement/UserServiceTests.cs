@@ -1,6 +1,6 @@
 ﻿using GymApi.Application.UserManagement;
 using GymApi.Domain.UserManagement;
-using GymApi.Infrastructure.UserManagement;
+using GymApi.Tests.Fakes;
 using NSubstitute;
 using NSubstitute.ReturnsExtensions;
 using NUnit.Framework;
