@@ -126,7 +126,10 @@ public sealed class SessionTrackingController(ITrainingSessionService service) :
         return Ok(SessionResponse.From(session));
     }
     
+    /// <summary>Delete a session.</summary>
     [HttpDelete("{sessionId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteSession(Guid sessionId, CancellationToken ct)
     {
         await service.DeleteSessionAsync(sessionId, ct);
