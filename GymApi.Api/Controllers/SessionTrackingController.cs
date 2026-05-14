@@ -19,7 +19,7 @@ public sealed class SessionTrackingController(ITrainingSessionService service) :
         [FromBody] CreateSessionRequest request,
         CancellationToken ct)
     {
-        var session = await service.CreateSessionAsync(request.UserId, request.InheritFromSessionId, request.Label, ct);
+        var session = await service.CreateSessionAsync(request.InheritFromSessionId, request.Label, ct);
         return CreatedAtAction(nameof(GetSession), new { sessionId = session.Id },
             SessionResponse.From(session));
     }
@@ -137,7 +137,6 @@ public sealed class SessionTrackingController(ITrainingSessionService service) :
     }
 
     /// <summary>Get sessions with optional filtering, sorting, and pagination.</summary>
-    /// <param name="userId">Filter by user ID.</param>
     /// <param name="status">Filter by session status (Active or Finished).</param>
     /// <param name="sort">
     /// Sort criteria in format 'property[:asc|desc]'. 
@@ -149,16 +148,14 @@ public sealed class SessionTrackingController(ITrainingSessionService service) :
     /// <param name="ct"></param>
     [HttpGet]
     [ProducesResponseType<PagedResponse<SessionResponse>>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetSessions(
-        [FromQuery] Guid? userId,
-        [FromQuery] SessionStatus? status,
+    public async Task<IActionResult> GetSessions([FromQuery] SessionStatus? status,
         [FromQuery] string? sort,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var sessions = await service.GetSessionsAsync(userId, status, sort, page, pageSize, ct);
-        var totalCount = await service.GetSessionsCountAsync(userId, status, ct);
+        var sessions = await service.GetSessionsAsync(status, sort, page, pageSize, ct);
+        var totalCount = await service.GetSessionsCountAsync(status, ct);
 
         var response = new PagedResponse<SessionResponse>(
             sessions.Select(SessionResponse.From).ToList(),
@@ -172,14 +169,12 @@ public sealed class SessionTrackingController(ITrainingSessionService service) :
     /// <summary>Get active sessions with optional filtering and pagination.</summary>
     [HttpGet("active")]
     [ProducesResponseType<PagedResponse<SessionResponse>>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetActiveSessions(
-        [FromQuery] Guid? userId,
-        [FromQuery] int page = 1,
+    public async Task<IActionResult> GetActiveSessions([FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var sessions = await service.GetSessionsAsync(userId, SessionStatus.Active, null, page, pageSize, ct);
-        var totalCount = await service.GetSessionsCountAsync(userId, SessionStatus.Active, ct);
+        var sessions = await service.GetSessionsAsync(SessionStatus.Active, null, page, pageSize, ct);
+        var totalCount = await service.GetSessionsCountAsync(SessionStatus.Active, ct);
 
         var response = new PagedResponse<SessionResponse>(
             sessions.Select(SessionResponse.From).ToList(),

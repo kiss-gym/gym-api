@@ -1,7 +1,6 @@
 ﻿using GymApi.Api.Models.Requests;
 using GymApi.Api.Models.Responses;
 using GymApi.Application.UserManagement;
-using GymApi.Domain.UserManagement;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GymApi.Api.Controllers;
@@ -11,8 +10,7 @@ namespace GymApi.Api.Controllers;
 [Route("api/users")]
 [Produces("application/json")]
 public sealed class UserController(
-    IUserService userService,
-    IUserRepository userRepository) : ControllerBase
+    IUserService userService) : ControllerBase
 {
     /// <summary>Register a new user.</summary>
     [HttpPost("register")]

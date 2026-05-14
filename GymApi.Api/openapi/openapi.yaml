@@ -52,12 +52,6 @@ paths:
         - Sessions
       summary: 'Get sessions with optional filtering, sorting, and pagination.'
       parameters:
-        - name: userId
-          in: query
-          description: Filter by user ID.
-          schema:
-            type: string
-            format: uuid
         - name: status
           in: query
           description: Filter by session status (Active or Finished).
@@ -378,11 +372,6 @@ paths:
         - Sessions
       summary: Get active sessions with optional filtering and pagination.
       parameters:
-        - name: userId
-          in: query
-          schema:
-            type: string
-            format: uuid
         - name: page
           in: query
           schema:

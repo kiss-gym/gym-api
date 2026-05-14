@@ -8,14 +8,16 @@ public sealed class TrainingSessionService(
     ITrainingSessionRepository repository)
     : ITrainingSessionService
 {
-    public async Task<TrainingSession> CreateSessionAsync(
-        Guid userId,
-        Guid? inheritFromSessionId = null,
+    public async Task<TrainingSession> CreateSessionAsync(Guid? inheritFromSessionId = null,
         string? label = null,
         CancellationToken ct = default)
     {
-        // For now, we allow passing userId, but in a real app we'd likely validate it against userContext
-        var session = TrainingSession.Create(userId);
+        if (!userContext.IsAuthenticated)
+        {
+            throw new UnauthorizedAccessException("No user authenticated");
+        }
+        
+        var session = TrainingSession.Create(userContext.UserId!.Value);
         if (label != null)
         {
             session.Rename(label);
@@ -36,17 +38,18 @@ public sealed class TrainingSessionService(
 
     public async Task<TrainingSession> GetSessionAsync(Guid sessionId, CancellationToken ct = default)
     {
+        if (!userContext.IsAuthenticated)
+        {
+            throw new UnauthorizedAccessException("No user authenticated");
+        }
+
         var session = await repository.GetByIdAsync(sessionId, ct)
                       ?? throw new KeyNotFoundException($"Session {sessionId} not found.");
 
-        _ = userContext;
-        // // Authorization check: User can only access their own sessions
-        // if (userContext.IsAuthenticated && session.UserId != userContext.UserId)
-        // {
-        //     throw new UnauthorizedAccessException("You do not have access to this session.");
-        // }
-
-        return session;
+        // Authorization check: User can only access their own sessions
+        return session.UserId != userContext.UserId
+            ? throw new UnauthorizedAccessException("You do not have access to this session.")
+            : session;
     }
 
     public async Task<ExerciseEntry> AddExerciseAsync(
@@ -115,21 +118,21 @@ public sealed class TrainingSessionService(
         return session;
     }
 
-    public async Task<IReadOnlyList<TrainingSession>> GetSessionsAsync(
-        Guid? userId = null,
-        SessionStatus? status = null,
+    public async Task<IReadOnlyList<TrainingSession>> GetSessionsAsync(SessionStatus? status = null,
         string? sort = null,
         int? page = null,
         int? pageSize = null,
         CancellationToken ct = default)
     {
+        if (!userContext.IsAuthenticated)
+        {
+            throw new UnauthorizedAccessException("No user authenticated");
+        }
+        
         var sessions = await repository.GetAllAsync(ct);
         var query = sessions.AsQueryable();
 
-        if (userId.HasValue)
-        {
-            query = query.Where(s => s.UserId == userId.Value);
-        }
+        query = query.Where(s => s.UserId == userContext.UserId!.Value);
 
         if (status.HasValue)
         {
@@ -158,18 +161,18 @@ public sealed class TrainingSessionService(
         return query.ToList().AsReadOnly();
     }
 
-    public async Task<int> GetSessionsCountAsync(
-        Guid? userId = null,
-        SessionStatus? status = null,
+    public async Task<int> GetSessionsCountAsync(SessionStatus? status = null,
         CancellationToken ct = default)
     {
+        if (!userContext.IsAuthenticated)
+        {
+            throw new UnauthorizedAccessException("No user authenticated");
+        }
+
         var sessions = await repository.GetAllAsync(ct);
         var query = sessions.AsQueryable();
 
-        if (userId.HasValue)
-        {
-            query = query.Where(s => s.UserId == userId.Value);
-        }
+        query = query.Where(s => s.UserId == userContext.UserId!.Value);
 
         if (status.HasValue)
         {

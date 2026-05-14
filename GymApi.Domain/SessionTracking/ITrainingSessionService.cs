@@ -6,9 +6,7 @@ namespace GymApi.Domain.SessionTracking;
 public interface ITrainingSessionService
 {
     // ReSharper disable UnusedParameter.Global
-    Task<TrainingSession> CreateSessionAsync(
-        Guid userId,
-        Guid? inheritFromSessionId = null,
+    Task<TrainingSession> CreateSessionAsync(Guid? inheritFromSessionId = null,
         string? label = null,
         CancellationToken ct = default);
 
@@ -47,17 +45,13 @@ public interface ITrainingSessionService
         Guid sessionId,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<TrainingSession>> GetSessionsAsync(
-        Guid? userId = null,
-        SessionStatus? status = null,
+    Task<IReadOnlyList<TrainingSession>> GetSessionsAsync(SessionStatus? status = null,
         string? sort = null,
         int? page = null,
         int? pageSize = null,
         CancellationToken ct = default);
 
-    Task<int> GetSessionsCountAsync(
-        Guid? userId = null,
-        SessionStatus? status = null,
+    Task<int> GetSessionsCountAsync(SessionStatus? status = null,
         CancellationToken ct = default);
 
     Task DeleteSessionAsync(

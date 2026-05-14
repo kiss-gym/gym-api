@@ -18,6 +18,10 @@ public sealed class SessionScenarioTests
     public void SetUp()
     {
         _userContext = Substitute.For<IUserContext>();
+
+        _userContext.UserId.Returns(Guid.NewGuid());
+        _userContext.IsAuthenticated.Returns(true);
+
         _repository = new InMemoryTrainingSessionRepository();
         
 
@@ -27,17 +31,13 @@ public sealed class SessionScenarioTests
     [Test]
     public async Task CompleteTrainingWorkflow_WithInheritance_WorksCorrectly()
     {
-        var userId = Guid.NewGuid();
-        _userContext.UserId.Returns(userId);
-        _userContext.IsAuthenticated.Returns(true);
-
         // 1. Create a previous session
-        var prevSession = await _service.CreateSessionAsync(userId);
+        var prevSession = await _service.CreateSessionAsync();
         await _service.AddExerciseAsync(prevSession.Id, "Old Squat", null);
         await _service.FinishSessionAsync(prevSession.Id);
 
         // 2. Create a new session inheriting from previous
-        var newSession = await _service.CreateSessionAsync(userId, prevSession.Id);
+        var newSession = await _service.CreateSessionAsync(prevSession.Id);
         
         // 3. Verify user has the latest session index
         
@@ -51,16 +51,12 @@ public sealed class SessionScenarioTests
     [Test]
     public async Task DeleteSessionAsync_DeletesSessionSuccessfully()
     {
-        var userId = Guid.NewGuid();
-        _userContext.UserId.Returns(userId);
-        _userContext.IsAuthenticated.Returns(true);
-
-        var session = await _service.CreateSessionAsync(userId);
+        var session = await _service.CreateSessionAsync();
         var sessionId = session.Id;
 
         await _service.DeleteSessionAsync(sessionId);
 
-        var foundSessions = await _service.GetSessionsAsync(sessionId);
+        var foundSessions = await _service.GetSessionsAsync();
         Assert.That(foundSessions, Is.Empty);
     }
 
@@ -68,28 +64,18 @@ public sealed class SessionScenarioTests
     [Test]
     public async Task GetSessionsAsync_ReturnsFilteredAndSortedSessions()
     {
-        var userId1 = Guid.NewGuid();
-        var userId2 = Guid.NewGuid();
-        _userContext.UserId.Returns(userId1);
-        _userContext.IsAuthenticated.Returns(true);
-
-        // Create 3 sessions for user1
-        var s1 = await _service.CreateSessionAsync(userId1);
+        // Create 3 sessions
+        var s1 = await _service.CreateSessionAsync();
         await _service.FinishSessionAsync(s1.Id);
         
         // Wait a bit to ensure different timestamps if needed, though they should be different enough
         await Task.Delay(10);
-        var s2 = await _service.CreateSessionAsync(userId1);
+        var s2 = await _service.CreateSessionAsync();
         await _service.FinishSessionAsync(s2.Id);
 
-        var s3 = await _service.CreateSessionAsync(userId1); // Still active
+        var s3 = await _service.CreateSessionAsync(); // Still active
 
-        // Create 1 session for user2
-        var s4 = await _service.CreateSessionAsync(userId2);
-        await _service.FinishSessionAsync(s4.Id);
-
-        // Test filtering by userId1
-        var user1Sessions = await _service.GetSessionsAsync(userId: userId1);
+        var user1Sessions = await _service.GetSessionsAsync();
         Assert.That(user1Sessions, Has.Count.EqualTo(3));
 
         // Test filtering by status Active
@@ -99,10 +85,10 @@ public sealed class SessionScenarioTests
 
         // Test filtering by status Finished
         var finishedSessions = await _service.GetSessionsAsync(status: SessionStatus.Finished);
-        Assert.That(finishedSessions, Has.Count.EqualTo(3)); // s1, s2, s4
+        Assert.That(finishedSessions, Has.Count.EqualTo(2)); // s1, s2
 
         // Test sorting by finishedAt desc
-        var sortedSessions = await _service.GetSessionsAsync(userId: userId1, sort: "finishedAt:desc");
+        var sortedSessions = await _service.GetSessionsAsync(sort: "finishedAt:desc");
         // s3 is active so finishedAt is null. s2 finished after s1.
         // In LINQ to Objects, OrderByDescending puts nulls last.
         Assert.That(sortedSessions[0].Id, Is.EqualTo(s2.Id));
@@ -110,17 +96,19 @@ public sealed class SessionScenarioTests
         Assert.That(sortedSessions[2].Id, Is.EqualTo(s3.Id));
 
         // Test pagination
-        var pagedSessions = await _service.GetSessionsAsync(userId: userId1, page: 1, pageSize: 2);
+        var pagedSessions = await _service.GetSessionsAsync(page: 1, pageSize: 2);
         Assert.That(pagedSessions, Has.Count.EqualTo(2));
     }
 
     [Test]
     public async Task CreateSession_WithLabel_SetsLabel()
     {
-        var userId = Guid.NewGuid();
+        _userContext.UserId.Returns(Guid.NewGuid());
+        _userContext.IsAuthenticated.Returns(true);
+        
         const string label = "Morning Workout";
 
-        var session = await _service.CreateSessionAsync(userId, label: label);
+        var session = await _service.CreateSessionAsync(label: label);
 
         Assert.That(session.Label, Is.EqualTo(label));
     }
@@ -128,8 +116,7 @@ public sealed class SessionScenarioTests
     [Test]
     public async Task RenameSession_UpdatesLabel()
     {
-        var userId = Guid.NewGuid();
-        var session = await _service.CreateSessionAsync(userId);
+        var session = await _service.CreateSessionAsync();
         const string newLabel = "Evening Session";
 
         var updatedSession = await _service.RenameSessionAsync(session.Id, newLabel);
