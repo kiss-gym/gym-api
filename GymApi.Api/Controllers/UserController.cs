@@ -1,6 +1,6 @@
-﻿using GymApi.Api.Models.Requests;
 using GymApi.Api.Models.Responses;
 using GymApi.Application.UserManagement;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GymApi.Api.Controllers;
@@ -9,19 +9,9 @@ namespace GymApi.Api.Controllers;
 [ApiController]
 [Route("api/users")]
 [Produces("application/json")]
-public sealed class UserController(
-    IUserService userService) : ControllerBase
+[Authorize]
+public sealed class UserController(IUserService userService) : ControllerBase
 {
-    /// <summary>Register a new user.</summary>
-    [HttpPost("register")]
-    [ProducesResponseType<UserResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken ct)
-    {
-        var user = await userService.RegisterAsync(request.Email, request.Name, ct);
-        return Ok(UserResponse.From(user));
-    }
-
     /// <summary>Get the current authenticated user profile.</summary>
     [HttpGet("me")]
     [ProducesResponseType<UserResponse>(StatusCodes.Status200OK)]

@@ -1,4 +1,4 @@
-﻿using GymApi.Domain.UserManagement;
+using GymApi.Domain.UserManagement;
 
 namespace GymApi.Application.UserManagement;
 
@@ -12,18 +12,5 @@ public sealed class UserService(IUserRepository userRepository, IUserContext use
         }
 
         return await userRepository.GetByIdAsync(userContext.UserId!.Value, ct);
-    }
-
-    public async Task<User> RegisterAsync(string email, string name, CancellationToken ct = default)
-    {
-        var existing = await userRepository.GetByEmailAsync(email, ct);
-        if (existing != null)
-        {
-            throw new InvalidOperationException("User already exists.");
-        }
-
-        var user = User.Create(Guid.NewGuid(), email, name);
-        await userRepository.SaveAsync(user, ct);
-        return user;
     }
 }
