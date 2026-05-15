@@ -8,15 +8,13 @@ public sealed class TrainingSessionService(
     ITrainingSessionRepository repository)
     : ITrainingSessionService
 {
-    public async Task<TrainingSession> CreateSessionAsync(Guid? inheritFromSessionId = null,
+    public async Task<TrainingSession> CreateSessionAsync(
+        Guid? inheritFromSessionId = null,
         string? label = null,
         CancellationToken ct = default)
     {
-        if (!userContext.IsAuthenticated)
-        {
-            throw new UnauthorizedAccessException("No user authenticated");
-        }
-        
+        EnsureAuthenticated();
+
         var session = TrainingSession.Create(userContext.UserId!.Value);
         if (label != null)
         {
@@ -38,15 +36,11 @@ public sealed class TrainingSessionService(
 
     public async Task<TrainingSession> GetSessionAsync(Guid sessionId, CancellationToken ct = default)
     {
-        if (!userContext.IsAuthenticated)
-        {
-            throw new UnauthorizedAccessException("No user authenticated");
-        }
+        EnsureAuthenticated();
 
         var session = await repository.GetByIdAsync(sessionId, ct)
                       ?? throw new KeyNotFoundException($"Session {sessionId} not found.");
 
-        // Authorization check: User can only access their own sessions
         return session.UserId != userContext.UserId
             ? throw new UnauthorizedAccessException("You do not have access to this session.")
             : session;
@@ -110,7 +104,9 @@ public sealed class TrainingSessionService(
         return session;
     }
 
-    public async Task<TrainingSession> FinishSessionAsync(Guid sessionId, CancellationToken ct = default)
+    public async Task<TrainingSession> FinishSessionAsync(
+        Guid sessionId,
+        CancellationToken ct = default)
     {
         var session = await GetSessionAsync(sessionId, ct);
         session.Finish();
@@ -124,66 +120,41 @@ public sealed class TrainingSessionService(
         int? pageSize = null,
         CancellationToken ct = default)
     {
-        if (!userContext.IsAuthenticated)
-        {
-            throw new UnauthorizedAccessException("No user authenticated");
-        }
-        
-        var sessions = await repository.GetAllAsync(ct);
-        var query = sessions.AsQueryable();
+        EnsureAuthenticated();
 
-        query = query.Where(s => s.UserId == userContext.UserId!.Value);
-
-        if (status.HasValue)
-        {
-            query = query.Where(s => s.Status == status.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(sort))
-        {
-            var parts = sort.Split(':');
-            var propertyName = parts[0];
-            var descending = parts.Length > 1 && parts[1].Equals("desc", StringComparison.OrdinalIgnoreCase);
-
-            query = propertyName.ToLowerInvariant() switch
-            {
-                "finishedat" => descending ? query.OrderByDescending(s => s.FinishedAt) : query.OrderBy(s => s.FinishedAt),
-                "createdat" => descending ? query.OrderByDescending(s => s.CreatedAt) : query.OrderBy(s => s.CreatedAt),
-                _ => query
-            };
-        }
-
-        if (page.HasValue && pageSize.HasValue)
-        {
-            query = query.Skip((page.Value - 1) * pageSize.Value).Take(pageSize.Value);
-        }
-
-        return query.ToList().AsReadOnly();
+        return await repository.GetSessionsAsync(
+            userId: userContext.UserId!.Value,
+            status: status,
+            sort: sort,
+            page: page ?? 1,
+            pageSize: pageSize ?? 10,
+            ct: ct);
     }
 
-    public async Task<int> GetSessionsCountAsync(SessionStatus? status = null,
+    public async Task<int> GetSessionsCountAsync(
+        SessionStatus? status = null,
         CancellationToken ct = default)
     {
-        if (!userContext.IsAuthenticated)
-        {
-            throw new UnauthorizedAccessException("No user authenticated");
-        }
+        EnsureAuthenticated();
 
-        var sessions = await repository.GetAllAsync(ct);
-        var query = sessions.AsQueryable();
-
-        query = query.Where(s => s.UserId == userContext.UserId!.Value);
-
-        if (status.HasValue)
-        {
-            query = query.Where(s => s.Status == status.Value);
-        }
-
-        return query.Count();
+        return await repository.CountSessionsAsync(
+            userId: userContext.UserId!.Value,
+            status: status,
+            ct: ct);
     }
 
     public async Task DeleteSessionAsync(Guid sessionId, CancellationToken ct = default)
     {
         await repository.DeleteAsync(sessionId, ct);
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private void EnsureAuthenticated()
+    {
+        if (!userContext.IsAuthenticated)
+        {
+            throw new UnauthorizedAccessException("No user authenticated.");
+        }
     }
 }

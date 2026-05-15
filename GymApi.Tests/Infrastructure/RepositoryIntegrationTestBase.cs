@@ -8,15 +8,38 @@ namespace GymApi.Tests.Infrastructure;
 
 /// <summary>
 /// Base class for repository integration tests.
-/// Connects to the real Supabase database using the connection string
-/// from appsettings.Development.json. Cleans up test data after each test.
+/// Shares a single NpgsqlDataSource across all tests to fit the connection pool limit
+/// (15 connections in session mode, Supabase's free plan).
+/// Cleans up test data after each test via ExecuteDelete.
 /// </summary>
 public abstract class RepositoryIntegrationTestBase
 {
+    // Shared across the entire test run — one pool, one data source
+    private static readonly NpgsqlDataSource _sharedDataSource = BuildDataSource();
+    
     protected GymApiDbContext DbContext { get; private set; } = null!;
 
     [SetUp]
     public void SetUpDatabase()
+    {
+        var options = new DbContextOptionsBuilder<GymApiDbContext>()
+            .UseNpgsql(_sharedDataSource)
+            .Options;
+
+        DbContext = new GymApiDbContext(options);
+    }
+
+    [TearDown]
+    public async Task TearDownDatabase()
+    {
+        // ExecuteDelete bypasses the change tracker — FK-safe order
+        await DbContext.ExerciseEntries.ExecuteDeleteAsync();
+        await DbContext.TrainingSessions.ExecuteDeleteAsync();
+        await DbContext.Users.ExecuteDeleteAsync();
+        await DbContext.DisposeAsync();
+    }
+
+    private static NpgsqlDataSource BuildDataSource()
     {
         var config = new ConfigurationBuilder()
             .SetBasePath(FindSolutionRoot())
@@ -28,37 +51,20 @@ public abstract class RepositoryIntegrationTestBase
             ?? throw new InvalidOperationException(
                 "Supabase:ConnectionString is missing from appsettings.Development.json");
 
-        // EnableDynamicJson is required for Npgsql 8+ to serialize List<T> → jsonb
-        var dataSource = new NpgsqlDataSourceBuilder(connectionString)
+        return new NpgsqlDataSourceBuilder(connectionString)
             .EnableDynamicJson()
             .Build();
-
-        var options = new DbContextOptionsBuilder<GymApiDbContext>()
-            .UseNpgsql(dataSource)
-            .Options;
-
-        DbContext = new GymApiDbContext(options);
     }
 
-    [TearDown]
-    public async Task TearDownDatabase()
-    {
-        // FK-safe order: exercise_entries first (child), then sessions, then users
-        await DbContext.ExerciseEntries.ExecuteDeleteAsync();
-        await DbContext.TrainingSessions.ExecuteDeleteAsync();
-        await DbContext.Users.ExecuteDeleteAsync();
-        await DbContext.DisposeAsync();
-    }
-
-    /// <summary>Walks up from the test binary output to find the solution root.</summary>
     private static string FindSolutionRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && dir.GetFiles("*.sln").Length == 0)
+        while (dir != null && !dir.GetFiles("*.sln").Any())
         {
             dir = dir.Parent;
         }
+
         return dir?.FullName
-            ?? throw new InvalidOperationException("Could not locate solution root (.sln file).");
+               ?? throw new InvalidOperationException("Could not locate solution root (.sln file).");
     }
 }
