@@ -4,7 +4,7 @@ $appServicePlanName = 'KissGymApiPlan'
 $webAppName = 'KissGymApi'
 
 $apiProjectPath = '.\GymApi.Api'
-$publishOutputFolder = Join-Path $apiProjectPath 'bin\Release\net8.0\publish'
+$publishOutputFolder = Join-Path $apiProjectPath 'bin\Release\net10.0\publish'
 $archiveFileName = 'deploy.zip'
 $archivePath = Join-Path $publishOutputFolder $archiveFileName
 
@@ -31,7 +31,19 @@ if (-not $existingAppServicePlan) {
 }
 
 Write-Host "Step 3: Creating or updating Azure Web App '$webAppName'..."
-New-AzWebApp -ResourceGroupName $rg -Name $webAppName -Location $location -AppServicePlan $appServicePlanName
+$existingWebApp = Get-AzWebApp -ResourceGroupName $rg -Name $webAppName -ErrorAction SilentlyContinue
+if (-not $existingWebApp) {
+    New-AzWebApp -ResourceGroupName $rg -Name $webAppName -Location $location -AppServicePlan $appServicePlanName
+    
+    Write-Host "Step 3a: Configuring Web App settings..."
+    $appSettings = @{
+        "Supabase__ConnectionString" = "@Microsoft.KeyVault(SecretUri=https://storage-connection-key01.vault.azure.net/secrets/Supabase-ConnectionString/)"
+        "Supabase__Url"              = "https://wfarqaikzdispshiwlet.supabase.co"
+    }
+    Set-AzWebApp -ResourceGroupName $rg -Name $webAppName -AppSettings $appSettings
+} else {
+    Write-Host "Web App '$webAppName' already exists. Skipping creation."
+}
 
 Write-Host "Step 4: Deploying the .NET Core API to web app '$webAppName'..."
 Publish-AzWebApp -ResourceGroupName $rg -Name $webAppName -ArchivePath $archivePath -Force
