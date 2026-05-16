@@ -1,18 +1,39 @@
-# Define variables
 $rg = 'ResourceGroup01'
 $location = 'West Europe'
-$appServicePlanName = 'ASP-ResourceGroup01-bd1b (F1: 1)'
+$appServicePlanName = 'KissGymApiPlan'
 $webAppName = 'KissGymApi'
-$archivePath = 'E:\\DWP\\github\\kiss-gym\\gym-api\\GymApi.Api\\bin\\Release\\net10.0\\publish\\deploy.zip'
 
-# Step 1: Create a new resource group for the App Service
-New-AzResourceGroup -Name $rg -Location $location
+$apiProjectPath = '.\GymApi.Api'
+$publishOutputFolder = Join-Path $apiProjectPath 'bin\Release\net8.0\publish'
+$archiveFileName = 'deploy.zip'
+$archivePath = Join-Path $publishOutputFolder $archiveFileName
 
-# Step 2: Create an App Service plan in the resource group
-New-AzAppServicePlan -ResourceGroupName $rg -Name $appServicePlanName -Location $location -Tier "Standard" -NumberofWorkers 1 -WorkerSize "Small"
+Write-Host "Step 0: Building, Publishing, and Zipping the API..."
 
-# Step 3: Create a new web app in the App Service plan
+dotnet publish $apiProjectPath -c Release -o $publishOutputFolder
+
+if (Test-Path $archivePath) {
+    Remove-Item $archivePath
+}
+Compress-Archive -Path (Join-Path $publishOutputFolder '*') -DestinationPath $archivePath -Force
+
+Write-Host "API published and zipped to $archivePath"
+
+Write-Host "Step 1: Creating or updating Azure Resource Group '$rg'..."
+New-AzResourceGroup -Name $rg -Location $location -Force
+
+Write-Host "Step 2: Creating or updating Azure App Service Plan '$appServicePlanName'..."
+$existingAppServicePlan = Get-AzAppServicePlan -ResourceGroupName $rg -Name $appServicePlanName -ErrorAction SilentlyContinue
+if (-not $existingAppServicePlan) {
+    New-AzAppServicePlan -ResourceGroupName $rg -Name $appServicePlanName -Location $location -Tier "Free"
+} else {
+    Write-Host "App Service Plan '$appServicePlanName' already exists. Skipping creation."
+}
+
+Write-Host "Step 3: Creating or updating Azure Web App '$webAppName'..."
 New-AzWebApp -ResourceGroupName $rg -Name $webAppName -Location $location -AppServicePlan $appServicePlanName
 
-# Step 4: Deploy the .NET Core API to the web app
-Publish-AzWebApp -ResourceGroupName $rg -Name $webAppName -ArchivePath $archivePath
+Write-Host "Step 4: Deploying the .NET Core API to web app '$webAppName'..."
+Publish-AzWebApp -ResourceGroupName $rg -Name $webAppName -ArchivePath $archivePath -Force
+
+Write-Host "Deployment complete!"
