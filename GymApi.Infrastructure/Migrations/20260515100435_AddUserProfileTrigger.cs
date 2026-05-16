@@ -10,10 +10,12 @@ namespace GymApi.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Creates a Postgres trigger that automatically inserts a profile row
-            // into public.users whenever Supabase creates a new auth.users record.
-            // This keeps the domain User aggregate in sync with Supabase Auth
-            // without requiring an explicit API call from the client.
+            // NOTE: The user profile trigger (handle_new_user / on_auth_user_created)
+            // must be created manually in the Supabase SQL Editor.
+            // It cannot be applied via EF migrations due to Supabase's auth schema restrictions.
+            
+            // This trigger inserts a profile row into public.users whenever Supabase creates a new auth.users record.
+            /*
             migrationBuilder.Sql("""
                 create or replace function public.handle_new_user()
                 returns trigger as $$
@@ -32,15 +34,18 @@ namespace GymApi.Infrastructure.Migrations
                     after insert on auth.users
                     for each row execute procedure public.handle_new_user();
                 """);
+            */
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            /*
             migrationBuilder.Sql("""
                 drop trigger if exists on_auth_user_created on auth.users;
                 drop function if exists public.handle_new_user();
                 """);
+            */
         }
     }
 }
