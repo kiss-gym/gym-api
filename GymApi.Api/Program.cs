@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
+#pragma warning disable CA1873 // potentially expensive logging
+
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Database ────────────────────────────────────────────────────────────────
@@ -40,7 +42,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         // Supabase exposes JWKS at {Url}/auth/v1/.well-known/jwks.json
-        // Authority triggers automatic JWKS discovery — no secret needed
         options.Authority = $"{builder.Configuration["Supabase:Url"]}/auth/v1";
         options.Audience = "authenticated";
     });
@@ -99,13 +100,17 @@ builder.Services.AddScoped<ITrainingSessionRepository, SupabaseTrainingSessionRe
 builder.Services.AddScoped<ITrainingSessionService, TrainingSessionService>();
 
 // ── Infrastructure ──────────────────────────────────────────────────────────
-builder.Services.AddSingleton(new VersionProvider(VersionProvider.ReadVersionFromAssembly(),
-    VersionProvider.GetRuntimeDescription()));
+var versionInfo = new VersionProvider(VersionProvider.ReadVersionFromAssembly(),
+    VersionProvider.GetRuntimeDescription());
+builder.Services.AddSingleton(versionInfo);
 
 builder.Services.AddTransient<ExceptionMiddleware>();
 builder.Services.AddSingleton<RequestResponseLoggingMiddleware>();
 
 var app = builder.Build();
+
+app.Logger.LogInformation("Kiss Gym API starting. Version: {Version}, Built: {Date}", 
+    versionInfo.CodeVersion, versionInfo.LastCommitDate);
 
 app.UseSwagger(options =>
 {
