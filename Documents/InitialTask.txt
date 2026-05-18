@@ -1,3 +1,6 @@
+-----------------------------------
+0. Task: Initial
+-----------------------------------
 I'd like to make an draft architecture for gym training (freeware),
 where each training session, a sequence of exercise (exercise:
 picture or foto, start / end time, automatic label,
@@ -26,3 +29,37 @@ The use case is:
 - Add/Start exercise (each exercise finishes previous and can be autofinished),
 - Remove exercise,
 - Finish session.
+
+-----------------------------------------
+1. Task:Exercise Sets
+--------------------
+The exercise API needs extension:
+Each set has auto-numerated order number, "finished" bool property, weight decimal property (nullable),
+and numeric repetitions (number) property (nullable). If all sets "finished", the exercise finishes as well.
+If exercise  set to finish, all the containing sets marked as finished.
+No set can be added to the finished exercise. 
+
+Endpoints extensions:
+
+// adds a new set
+POST /api/sessions/{sessionId}/exercises/{exerciseId}/sets
+Body: { weight?: number, repetitions? integer }
+→ 201 ExerciseSet
+→ Server auto-assigns setNumber = last setNumber + 1
+
+// updates set (finish, update weight/repetitions)
+PATCH /api/sessions/{sessionId}/exercises/{exerciseId}/sets/{setId}
+Body: { isFinished?: boolean, weight?: number, repetitions?: integer }
+→ 200 ExerciseSet
+
+// removes a set
+DELETE /api/sessions/{sessionId}/exercises/{exerciseId}/sets/{setId}
+→ 204 No Content
+
+Did I forget anything?
+
+Please create an implementation plan following DDD, SOLID and KISS.
+
+Ask, if you have questions.
+
+You'd like to get my source files again, correct?
