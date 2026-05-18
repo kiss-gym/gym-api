@@ -96,7 +96,8 @@ gymApiBackend -->|RESTful API / OpenAPI| consumerClients
    Use the **Session Pooler** (port 5432) — required for Azure compatibility (IPv4).  
    Use the **Direct connection** locally for running EF migrations.
 
-4. Create the user profile trigger manually in **Dashboard → SQL Editor**:
+4. (After database migrations, see below)
+Create the user profile trigger manually in **Dashboard → SQL Editor**:
 
 ```sql
 create or replace function public.handle_new_user()
