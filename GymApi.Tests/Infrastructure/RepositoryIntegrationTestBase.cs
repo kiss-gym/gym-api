@@ -2,15 +2,16 @@ using GymApi.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
+using Microsoft.EntityFrameworkCore.Storage;
 using NUnit.Framework;
 
 namespace GymApi.Tests.Infrastructure;
 
 /// <summary>
-/// Base class for repository integration tests.
-/// Shares a single NpgsqlDataSource across all tests to fit the connection pool limit
-/// (15 connections in session mode, Supabase's free plan).
-/// Cleans up test data after each test via ExecuteDelete.
+/// Base class for repository integration tests against real Supabase databases.
+/// Requires appsettings.Development.json with a valid Supabase:ConnectionString.
+/// Shares a single _sharedDataSource (NpgsqlDataSource) across all tests to fit the connection pool limit
+/// Cleans up test data via _transaction.RollbackAsync 
 /// </summary>
 public abstract class RepositoryIntegrationTestBase
 {
@@ -18,24 +19,27 @@ public abstract class RepositoryIntegrationTestBase
     private static readonly NpgsqlDataSource _sharedDataSource = BuildDataSource();
     
     protected GymApiDbContext DbContext { get; private set; } = null!;
+    private IDbContextTransaction? _transaction;
 
     [SetUp]
-    public void SetUpDatabase()
+    public async Task SetUpDatabase()
     {
         var options = new DbContextOptionsBuilder<GymApiDbContext>()
             .UseNpgsql(_sharedDataSource)
             .Options;
 
         DbContext = new GymApiDbContext(options);
+        _transaction = await DbContext.Database.BeginTransactionAsync();
     }
 
     [TearDown]
     public async Task TearDownDatabase()
     {
-        // ExecuteDelete bypasses the change tracker — FK-safe order
-        await DbContext.ExerciseEntries.ExecuteDeleteAsync();
-        await DbContext.TrainingSessions.ExecuteDeleteAsync();
-        await DbContext.Users.ExecuteDeleteAsync();
+        if (_transaction != null)
+        {
+            await _transaction.RollbackAsync();
+            await _transaction.DisposeAsync();
+        }
         await DbContext.DisposeAsync();
     }
 
