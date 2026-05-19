@@ -61,6 +61,17 @@ public sealed class ExerciseEntry
         var newSet = ExerciseSet.Create(setNumber, weight, repetitions);
         _sets.Add(newSet);
     }
+    
+    public void AddSet()
+    {
+        EnsureExerciseIsNotFinished();
+        
+        var maxSetNumber = _sets.Max(s => s.SetNumber);
+        var latestSet = _sets.LastOrDefault(s => s.SetNumber == maxSetNumber);
+
+        var newSet = ExerciseSet.Create(maxSetNumber + 1, latestSet?.Weight, latestSet?.Repetitions);
+        _sets.Add(newSet);
+    }
 
     public void UpdateSet(Guid setId, bool? isFinished, decimal? weight, int? repetitions)
     {
