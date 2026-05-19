@@ -58,8 +58,3 @@ DELETE /api/sessions/{sessionId}/exercises/{exerciseId}/sets/{setId}
 
 Did I forget anything?
 
-Please create an implementation plan following DDD, SOLID and KISS.
-
-Ask, if you have questions.
-
-You'd like to get my source files again, correct?
