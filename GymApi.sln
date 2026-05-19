@@ -27,6 +27,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{
 		Documents\InitialTask.txt = Documents\InitialTask.txt
 		Documents\supabase_implementation_plan.svg = Documents\supabase_implementation_plan.svg
 		Documents\tdd_implementation_roadmap.svg = Documents\tdd_implementation_roadmap.svg
+		Documents\exercise_sets_tdd_roadmap.svg = Documents\exercise_sets_tdd_roadmap.svg
 	EndProjectSection
 EndProject
 Global
