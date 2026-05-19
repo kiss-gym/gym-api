@@ -49,11 +49,16 @@ public sealed class TrainingSession
 
         foreach (var ex in parentSession.Exercises)
         {
-            _exercises.Add(ExerciseEntry.CreatePending(ex.AutoLabel, ex.PhotoUrl, ex.Properties));
+            var exerciseEntry = ExerciseEntry.CreatePending(ex.AutoLabel, ex.PhotoUrl, ex.Properties);
+            foreach(var st in ex.Sets)
+            {
+                exerciseEntry.AddSet(st.Weight, st.Repetitions);
+            }
+            _exercises.Add(exerciseEntry);
         }
     }
 
-    /// <summary>Adds a new exercise, starts it immediately, and auto-finishes any running exercise.</summary>
+    /// <summary>Adds a new exercise, doesn't starts it immediately, and auto-finishes any running exercise.</summary>
     public ExerciseEntry AddExercise(
         string autoLabel,
         string? photoUrl,
@@ -63,12 +68,11 @@ public sealed class TrainingSession
         AutoFinishRunningExercise();
 
         var exercise = ExerciseEntry.CreatePending(autoLabel, photoUrl, properties);
-        exercise.Start();
         _exercises.Add(exercise);
         return exercise;
     }
 
-    /// <summary>Starts a pending exercise (pending exercise are inherited from a parent session), auto-finishing any running exercise.</summary>
+    /// <summary>Starts a pending exercise, auto-finishing any running exercise.</summary>
     public ExerciseEntry StartExercise(Guid exerciseId)
     {
         EnsureSessionIsActive();

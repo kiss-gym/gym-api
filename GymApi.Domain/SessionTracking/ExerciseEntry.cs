@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace GymApi.Domain.SessionTracking;
 
 /// <summary>
@@ -13,6 +17,9 @@ public sealed class ExerciseEntry
     public DateTimeOffset? StartedAt { get; private set; }
     public DateTimeOffset? RealEndAt { get; private set; }
     public IReadOnlyList<ExerciseProperty> Properties { get; private set; } = [];
+
+    private readonly List<ExerciseSet> _sets = [];
+    public IReadOnlyList<ExerciseSet> Sets => _sets.AsReadOnly();
 
     public bool IsPending => StartedAt is null;
     public bool IsRunning => StartedAt is not null && RealEndAt is null;
@@ -46,11 +53,64 @@ public sealed class ExerciseEntry
         StartedAt = DateTimeOffset.UtcNow;
     }
 
+    public void AddSet(decimal? weight, int? repetitions)
+    {
+        EnsureExerciseIsNotFinished();
+
+        var setNumber = _sets.Count == 0 ? 1 : _sets.Max(s => s.SetNumber) + 1;
+        var newSet = ExerciseSet.Create(setNumber, weight, repetitions);
+        _sets.Add(newSet);
+    }
+
+    public void UpdateSet(Guid setId, bool? isFinished, decimal? weight, int? repetitions)
+    {
+        EnsureExerciseIsNotFinished();
+
+        var set = _sets.FirstOrDefault(s => s.Id == setId);
+        if (set == null)
+        {
+            throw new ArgumentException($"Set with ID '{setId}' not found.", nameof(setId));
+        }
+
+        set.Update(weight, repetitions);
+
+        if (isFinished == true)
+        {
+            set.Finish();
+        }
+        else if (isFinished == false)
+        {
+            set.UnFinish();
+        }
+    }
+
+    public void RemoveSet(Guid setId)
+    {
+        EnsureExerciseIsNotFinished();
+        
+        var set = _sets.FirstOrDefault(s => s.Id == setId);
+        if (set == null)
+        {
+            throw new ArgumentException($"Set with ID '{setId}' not found.", nameof(setId));
+        }
+
+        _sets.Remove(set);
+    }
+
     internal void Finish()
     {
         if (IsRunning)
         {
             RealEndAt = DateTimeOffset.UtcNow;
+        }
+        _sets.ForEach(s => s.Finish());
+    }
+    
+    private void EnsureExerciseIsNotFinished()
+    {
+        if (IsFinished)
+        {
+            throw new InvalidOperationException("The exercise is already finished.");
         }
     }
 }
