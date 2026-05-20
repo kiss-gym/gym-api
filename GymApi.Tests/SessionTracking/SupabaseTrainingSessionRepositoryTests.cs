@@ -69,10 +69,10 @@ public sealed class SupabaseTrainingSessionRepositoryTests : RepositoryIntegrati
         exercise.AddSet(120m, 3);
 
         await _sut.SaveAsync(session);
-        var retrieved = await _sut.GetByIdAsync(session.Id);
+        var retrievedSession = await _sut.GetByIdAsync(session.Id);
 
-        Assert.That(retrieved, Is.Not.Null);
-        var retrievedSets = retrieved!.Exercises[0].Sets.OrderBy(s => s.SetNumber).ToList();
+        Assert.That(retrievedSession, Is.Not.Null);
+        var retrievedSets = retrievedSession!.Exercises[0].SortedSets;
         
         Assert.Multiple(() =>
         {
@@ -93,12 +93,12 @@ public sealed class SupabaseTrainingSessionRepositoryTests : RepositoryIntegrati
         var session = TrainingSession.Create(_userId);
         var exercise = session.AddExercise("Deadlift", null);
         exercise.AddSet(150m, 1);
-        exercise.CompleteSet(exercise.Sets[0].Id);
+        exercise.CompleteSet(exercise.SortedSets[0].Id);
 
         await _sut.SaveAsync(session);
         var retrieved = await _sut.GetByIdAsync(session.Id);
 
-        Assert.That(retrieved!.Exercises[0].Sets[0].IsCompleted, Is.True);
+        Assert.That(retrieved!.Exercises[0].SortedSets[0].IsCompleted, Is.True);
     }
 
     [Test]
@@ -109,14 +109,14 @@ public sealed class SupabaseTrainingSessionRepositoryTests : RepositoryIntegrati
         exercise.AddSet(60m, 8);
         await _sut.SaveAsync(session);
 
-        exercise.UpdateSet(exercise.Sets[0].Id, 70m, 6);
+        exercise.UpdateSet(exercise.SortedSets[0].Id, 70m, 6);
         await _sut.SaveAsync(session);
 
         var retrieved = await _sut.GetByIdAsync(session.Id);
         Assert.Multiple(() =>
         {
-            Assert.That(retrieved!.Exercises[0].Sets[0].Weight, Is.EqualTo(70m));
-            Assert.That(retrieved.Exercises[0].Sets[0].Repetitions, Is.EqualTo(6));
+            Assert.That(retrieved!.Exercises[0].SortedSets[0].Weight, Is.EqualTo(70m));
+            Assert.That(retrieved.Exercises[0].SortedSets[0].Repetitions, Is.EqualTo(6));
         });
     }
 
@@ -129,11 +129,11 @@ public sealed class SupabaseTrainingSessionRepositoryTests : RepositoryIntegrati
         exercise.AddSet(80m, 10);
         await _sut.SaveAsync(session);
 
-        exercise.RemoveSet(exercise.Sets[0].Id);
+        exercise.RemoveSet(exercise.SortedSets[0].Id);
         await _sut.SaveAsync(session);
 
         var retrieved = await _sut.GetByIdAsync(session.Id);
-        Assert.That(retrieved!.Exercises[0].Sets, Has.Count.EqualTo(1));
+        Assert.That(retrieved!.Exercises[0].SortedSets, Has.Count.EqualTo(1));
     }
 
     [Test]

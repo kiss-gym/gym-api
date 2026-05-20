@@ -14,7 +14,7 @@ public sealed class ExerciseEntry
     public IReadOnlyList<ExerciseProperty> Properties { get; private set; } = [];
 
     private readonly List<ExerciseSet> _sets = [];
-    public IReadOnlyList<ExerciseSet> Sets => _sets.AsReadOnly();
+    public IReadOnlyList<ExerciseSet> SortedSets => _sets.OrderBy(s => s.SetNumber).ToList().AsReadOnly();
 
     public bool IsPending => StartedAt is null;
     public bool IsRunning => StartedAt is not null && RealEndAt is null;

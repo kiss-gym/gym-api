@@ -28,7 +28,7 @@ public sealed class SupabaseTrainingSessionRepository(GymApiDbContext db) : ITra
         return await db.TrainingSessions
             .AsNoTracking()
             .Include(s => s.Exercises)
-                .ThenInclude(e => e.Sets)
+                .ThenInclude(e => e.SortedSets)
             .FirstOrDefaultAsync(s => s.Id == id, ct);
     }
 
@@ -43,7 +43,7 @@ public sealed class SupabaseTrainingSessionRepository(GymApiDbContext db) : ITra
         var query = db.TrainingSessions
             .AsNoTracking()
             .Include(s => s.Exercises)
-                .ThenInclude(e => e.Sets)
+                .ThenInclude(e => e.SortedSets)
             .Where(s => s.UserId == userId);
 
         if (status.HasValue)
