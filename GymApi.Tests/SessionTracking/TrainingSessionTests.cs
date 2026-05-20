@@ -194,7 +194,7 @@ public sealed class TrainingSessionTests
     }
 
     [Test]
-    public void Finish_FinishesAllSetsOnRunningExercise()
+    public void Finish_CompletesAllSetsOnRunningExercise()
     {
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
@@ -204,7 +204,7 @@ public sealed class TrainingSessionTests
 
         session.Finish();
 
-        Assert.That(exercise.Sets.All(s => s.IsFinished), Is.True);
+        Assert.That(exercise.Sets.All(s => s.IsCompleted), Is.True);
     }
 
     // ── RemoveExercise ──────────────────────────────────────────────────────
@@ -276,7 +276,7 @@ public sealed class TrainingSessionTests
     }
 
     [Test]
-    public void InheritFrom_CopiedSetsAreNotFinished()
+    public void InheritFrom_CopiedSetsAreNotCompleted()
     {
         // Inherited sets start fresh — not carrying finished state
         var previous = TrainingSession.Create(_anyUser);
@@ -287,7 +287,7 @@ public sealed class TrainingSessionTests
         var next = TrainingSession.Create(_anyUser);
         next.InheritFrom(previous);
 
-        Assert.That(next.Exercises[0].Sets[0].IsFinished, Is.False);
+        Assert.That(next.Exercises[0].Sets[0].IsCompleted, Is.False);
     }
 
     [Test]
@@ -319,7 +319,7 @@ public sealed class TrainingSessionTests
             Assert.That(exercise.Sets[0].SetNumber, Is.EqualTo(1));
             Assert.That(exercise.Sets[0].Weight, Is.EqualTo(100m));
             Assert.That(exercise.Sets[0].Repetitions, Is.EqualTo(5));
-            Assert.That(exercise.Sets[0].IsFinished, Is.False);
+            Assert.That(exercise.Sets[0].IsCompleted, Is.False);
         });
     }
 
@@ -392,45 +392,30 @@ public sealed class TrainingSessionTests
     }
 
     [Test]
-    public void UpdateSet_FinishesSet()
+    public void CompleteSet_CompletesSet()
     {
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
         exercise.AddSet(100m, 5);
         var setId = exercise.Sets[0].Id;
 
-        exercise.UpdateSet(setId, isFinished: true, weight: null, repetitions: null);
+        exercise.CompleteSet(setId);
 
-        Assert.That(exercise.Sets[0].IsFinished, Is.True);
+        Assert.That(exercise.Sets[0].IsCompleted, Is.True);
     }
 
     [Test]
-    public void UpdateSet_UnFinishesSet()
+    public void UnCompleteSet_UnCompletesSet()
     {
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
         exercise.AddSet(100m, 5);
         var setId = exercise.Sets[0].Id;
-        exercise.UpdateSet(setId, isFinished: true, weight: null, repetitions: null);
+        
+        exercise.CompleteSet(setId);
+        exercise.UnCompleteSet(setId);
 
-        exercise.UpdateSet(setId, isFinished: false, weight: null, repetitions: null);
-
-        Assert.That(exercise.Sets[0].IsFinished, Is.False);
-    }
-
-    [Test]
-    public void UpdateSet_NullIsFinished_DoesNotChangeFinishedState()
-    {
-        var session = TrainingSession.Create(_anyUser);
-        var exercise = session.AddExercise("Squat", null);
-        exercise.AddSet(100m, 5);
-        var setId = exercise.Sets[0].Id;
-        exercise.UpdateSet(setId, isFinished: true, weight: null, repetitions: null);
-
-        // Update weight only — finished state should remain true
-        exercise.UpdateSet(setId, isFinished: null, weight: 120m, repetitions: null);
-
-        Assert.That(exercise.Sets[0].IsFinished, Is.True);
+        Assert.That(exercise.Sets[0].IsCompleted, Is.False);
     }
 
     [Test]
@@ -441,7 +426,7 @@ public sealed class TrainingSessionTests
         exercise.AddSet(100m, 5);
         var setId = exercise.Sets[0].Id;
 
-        exercise.UpdateSet(setId, isFinished: null, weight: 120m, repetitions: 3);
+        exercise.UpdateSet(setId, weight: 120m, repetitions: 3);
 
         Assert.Multiple(() =>
         {
@@ -461,17 +446,17 @@ public sealed class TrainingSessionTests
         session.FinishExercise(exercise.Id);
 
         Assert.Throws<InvalidOperationException>(() =>
-            exercise.UpdateSet(setId, isFinished: true, weight: null, repetitions: null));
+            exercise.UpdateSet(setId, weight: null, repetitions: null));
     }
 
     [Test]
-    public void UpdateSet_WithUnknownSetId_ThrowsArgumentException()
+    public void UpdateSet_WithUnknownSetId_ThrowsKeyNotFoundException()
     {
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
 
-        Assert.Throws<ArgumentException>(() =>
-            exercise.UpdateSet(Guid.NewGuid(), isFinished: true, weight: null, repetitions: null));
+        Assert.Throws<KeyNotFoundException>(() =>
+            exercise.UpdateSet(Guid.NewGuid(), weight: null, repetitions: null));
     }
 
     [Test]
@@ -501,16 +486,16 @@ public sealed class TrainingSessionTests
     }
 
     [Test]
-    public void RemoveSet_WithUnknownSetId_ThrowsArgumentException()
+    public void RemoveSet_WithUnknownSetId_ThrowsKeyNotFoundException()
     {
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
 
-        Assert.Throws<ArgumentException>(() => exercise.RemoveSet(Guid.NewGuid()));
+        Assert.Throws<KeyNotFoundException>(() => exercise.RemoveSet(Guid.NewGuid()));
     }
 
     [Test]
-    public void FinishExercise_FinishesAllContainedSets()
+    public void FinishExercise_CompletesAllContainedSets()
     {
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Deadlift", null);
@@ -520,7 +505,7 @@ public sealed class TrainingSessionTests
 
         session.FinishExercise(exercise.Id);
 
-        Assert.That(exercise.Sets.All(s => s.IsFinished), Is.True);
+        Assert.That(exercise.Sets.All(s => s.IsCompleted), Is.True);
     }
     // ── Bug exposure tests ──────────────────────────────────────────────────
 
@@ -537,7 +522,7 @@ public sealed class TrainingSessionTests
     }
 
     [Test]
-    public void UpdateSet_NullWeight_DoesNotOverwriteExistingWeight()
+    public void UpdateSet_NullWeight_OverwritesExistingWeight()
     {
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
@@ -545,7 +530,7 @@ public sealed class TrainingSessionTests
         var setId = exercise.Sets[0].Id;
 
         // Pass null weight — must clear the existing 100m value
-        exercise.UpdateSet(setId, isFinished: null, weight: null, repetitions: null);
+        exercise.UpdateSet(setId, weight: null, repetitions: null);
 
         Assert.That(exercise.Sets[0].Weight, Is.Null);
         Assert.That(exercise.Sets[0].Repetitions, Is.Null);

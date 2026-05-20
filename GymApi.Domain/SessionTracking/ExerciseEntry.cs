@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace GymApi.Domain.SessionTracking;
 
 /// <summary>
@@ -74,38 +70,35 @@ public sealed class ExerciseEntry
         _sets.Add(newSet);
     }
 
-    public void UpdateSet(Guid setId, bool? isFinished, decimal? weight, int? repetitions)
+    public void UpdateSet(Guid setId, decimal? weight, int? repetitions)
     {
         EnsureExerciseIsNotFinished();
 
-        var set = _sets.FirstOrDefault(s => s.Id == setId);
-        if (set == null)
-        {
-            throw new ArgumentException($"Set with ID '{setId}' not found.", nameof(setId));
-        }
+        var set = FindSet(setId);
 
         set.Update(weight, repetitions);
-
-        if (isFinished == true)
-        {
-            set.Finish();
-        }
-        else if (isFinished == false)
-        {
-            set.UnFinish();
-        }
     }
+
+    public void CompleteSet(Guid setId)
+    {
+        EnsureExerciseIsNotFinished();
+        var set = FindSet(setId);
+        set.Complete();
+    }
+
+    public void UnCompleteSet(Guid setId)
+    {
+        EnsureExerciseIsNotFinished();
+        var set = FindSet(setId);
+        set.UnComplete();
+    }
+
 
     public void RemoveSet(Guid setId)
     {
         EnsureExerciseIsNotFinished();
         
-        var set = _sets.FirstOrDefault(s => s.Id == setId);
-        if (set == null)
-        {
-            throw new ArgumentException($"Set with ID '{setId}' not found.", nameof(setId));
-        }
-
+        var set = FindSet(setId);
         _sets.Remove(set);
     }
 
@@ -115,7 +108,7 @@ public sealed class ExerciseEntry
         {
             RealEndAt = DateTimeOffset.UtcNow;
         }
-        _sets.ForEach(s => s.Finish());
+        _sets.ForEach(s => s.Complete());
     }
     
     private void EnsureExerciseIsNotFinished()
@@ -125,4 +118,11 @@ public sealed class ExerciseEntry
             throw new InvalidOperationException("The exercise is already finished.");
         }
     }
+    
+    private ExerciseSet FindSet(Guid setId)  
+    { 
+        return _sets.FirstOrDefault(s => s.Id == setId)
+               ?? throw new KeyNotFoundException($"Set with ID '{setId}' not found in exercise '{Id}' ('{AutoLabel}').");
+    }
+
 }

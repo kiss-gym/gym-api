@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace GymApi.Domain.SessionTracking
+﻿namespace GymApi.Domain.SessionTracking
 {
     public class ExerciseSet
     {
@@ -8,7 +6,7 @@ namespace GymApi.Domain.SessionTracking
         public int SetNumber { get; private set; }
         public decimal? Weight { get; private set; }
         public int? Repetitions { get; private set; }
-        public bool IsFinished { get; private set; }
+        public bool IsCompleted { get; private set; }
 
         private ExerciseSet(int setNumber, decimal? weight, int? repetitions)
         {
@@ -16,7 +14,7 @@ namespace GymApi.Domain.SessionTracking
             SetNumber = setNumber;
             Weight = weight;
             Repetitions = repetitions;
-            IsFinished = false;
+            IsCompleted = false;
         }
 
         public static ExerciseSet Create(int setNumber, decimal? weight, int? repetitions)
@@ -24,14 +22,14 @@ namespace GymApi.Domain.SessionTracking
             return new ExerciseSet(setNumber, weight, repetitions);
         }
 
-        internal void Finish()
+        internal void Complete()
         {
-            IsFinished = true;
+            IsCompleted = true;
         }
 
-        internal void UnFinish()
+        internal void UnComplete()
         {
-            IsFinished = false;
+            IsCompleted = false;
         }
 
         internal void Update(decimal? weight, int? repetitions)
