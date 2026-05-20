@@ -7,7 +7,6 @@ namespace GymApi.Domain.SessionTracking;
 /// <summary>
 /// A single exercise within a training session.
 /// Lifecycle: Pending → Running → Finished.
-/// Pending state only exists for exercises inherited from a previous session.
 /// </summary>
 public sealed class ExerciseEntry
 {
@@ -70,9 +69,10 @@ public sealed class ExerciseEntry
             throw new InvalidOperationException("Cannot copy from last set — no sets exist yet.");
         }
 
-        var latestSet = _sets.MaxBy(s => s.SetNumber)!;
+        var latestSet = _sets.OrderByDescending(s => s.SetNumber).First();
         var newSet = ExerciseSet.Create(latestSet.SetNumber + 1, latestSet.Weight, latestSet.Repetitions);
-        _sets.Add(newSet);    }
+        _sets.Add(newSet);
+    }
 
     public void UpdateSet(Guid setId, bool? isFinished, decimal? weight, int? repetitions)
     {
