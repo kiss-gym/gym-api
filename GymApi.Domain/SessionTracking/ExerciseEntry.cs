@@ -62,16 +62,17 @@ public sealed class ExerciseEntry
         _sets.Add(newSet);
     }
     
-    public void AddSet()
+    public void AddCopyOfLastSet()
     {
         EnsureExerciseIsNotFinished();
-        
-        var maxSetNumber = _sets.Max(s => s.SetNumber);
-        var latestSet = _sets.LastOrDefault(s => s.SetNumber == maxSetNumber);
+        if (_sets.Count == 0)
+        {
+            throw new InvalidOperationException("Cannot copy from last set — no sets exist yet.");
+        }
 
-        var newSet = ExerciseSet.Create(maxSetNumber + 1, latestSet?.Weight, latestSet?.Repetitions);
-        _sets.Add(newSet);
-    }
+        var latestSet = _sets.MaxBy(s => s.SetNumber)!;
+        var newSet = ExerciseSet.Create(latestSet.SetNumber + 1, latestSet.Weight, latestSet.Repetitions);
+        _sets.Add(newSet);    }
 
     public void UpdateSet(Guid setId, bool? isFinished, decimal? weight, int? repetitions)
     {

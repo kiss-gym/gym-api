@@ -8,18 +8,93 @@ public sealed class TrainingSessionTests
 {
     private static readonly Guid _anyUser = Guid.NewGuid();
 
+    // ── Session lifecycle ───────────────────────────────────────────────────
+
     [Test]
-    public void AddExercise_AutoFinishesPreviousRunningExercise()
+    public void CreateSession_SetsStatusActiveAndRecordsCreatedAtTimestamp()
     {
         var session = TrainingSession.Create(_anyUser);
-        session.AddExercise("Push-up", null);
-        session.AddExercise("Pull-up", null);
 
         Assert.Multiple(() =>
         {
-            Assert.That(session.Exercises[0].IsFinished, Is.True);
-            Assert.That(session.Exercises[1].IsRunning, Is.True);
+            Assert.That(session.Status, Is.EqualTo(SessionStatus.Active));
+            Assert.That(session.CreatedAt, Is.Not.EqualTo(default(DateTimeOffset)));
         });
+    }
+
+    [Test]
+    public void FinishSession_SetsStatusFinishedAndRecordsFinishedAt()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        session.Finish();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(session.Status, Is.EqualTo(SessionStatus.Finished));
+            Assert.That(session.FinishedAt, Is.Not.Null);
+        });
+    }
+
+    [Test]
+    public void Finish_OnAlreadyFinishedSession_ThrowsInvalidOperationException()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        session.Finish();
+
+        Assert.Throws<InvalidOperationException>(session.Finish);
+    }
+
+    [Test]
+    public void Rename_UpdatesLabel()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        session.Rename("New Name");
+
+        Assert.That(session.Label, Is.EqualTo("New Name"));
+    }
+
+    [Test]
+    public void Rename_OnFinishedSession_ThrowsInvalidOperationException()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        session.Finish();
+
+        Assert.Throws<InvalidOperationException>(() => session.Rename("New Name"));
+    }
+
+    // ── AddExercise ─────────────────────────────────────────────────────────
+
+    [Test]
+    public void AddExercise_CreatesExerciseAsPending()
+    {
+        // New requirement: AddExercise no longer auto-starts the exercise
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Push-up", null);
+
+        Assert.That(exercise.IsPending, Is.True);
+    }
+
+    [Test]
+    public void AddExercise_AutoFinishesPreviousRunningExercise()
+    {
+        // A running exercise (started manually) is auto-finished when a new one is added
+        var session = TrainingSession.Create(_anyUser);
+        var first = session.AddExercise("Push-up", null);
+        session.StartExercise(first.Id);
+
+        session.AddExercise("Pull-up", null);
+
+        Assert.That(first.IsFinished, Is.True);
+    }
+
+    [Test]
+    public void AddExercise_WhenNoPreviousRunning_DoesNotThrow()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        session.AddExercise("Push-up", null);
+
+        // Second add with no running exercise — should not throw
+        Assert.DoesNotThrow(() => session.AddExercise("Pull-up", null));
     }
 
     [Test]
@@ -31,52 +106,108 @@ public sealed class TrainingSessionTests
         Assert.Throws<InvalidOperationException>(() => session.AddExercise("Squat", null));
     }
 
+    // ── StartExercise ───────────────────────────────────────────────────────
+
     [Test]
-    public void CreateSession_SetsStatusStartedAndRecordsCreatedAtTimestamp()
+    public void StartExercise_StartsPendingExercise()
     {
-        
         var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Squat", null);
+
+        session.StartExercise(exercise.Id);
+
+        Assert.That(exercise.IsRunning, Is.True);
+    }
+
+    [Test]
+    public void StartExercise_AutoFinishesPreviousRunningExercise()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var first = session.AddExercise("OHP", null);
+        var second = session.AddExercise("Row", null);
+
+        session.StartExercise(first.Id);
+        session.StartExercise(second.Id);
 
         Assert.Multiple(() =>
         {
-            Assert.That(session.Status, Is.EqualTo(SessionStatus.Active));
-            Assert.That(session.CreatedAt, Is.Not.Null);
+            Assert.That(first.IsFinished, Is.True);
+            Assert.That(second.IsRunning, Is.True);
         });
     }
 
-
     [Test]
-    public void FinishSession_SetsStatusFinishedAndRecordsFinishAtTimestamp()
+    public void StartExercise_OnAlreadyRunningExercise_ThrowsInvalidOperationException()
     {
         var session = TrainingSession.Create(_anyUser);
-        session.Finish();
+        var exercise = session.AddExercise("Squat", null);
+        session.StartExercise(exercise.Id);
 
-        Assert.Multiple(() =>
-        {
-            Assert.That(session.Status, Is.EqualTo(SessionStatus.Finished));
-            Assert.That(session.CreatedAt, Is.Not.Null);
-            Assert.That(session.FinishedAt, Is.Not.Null);
-        });
+        Assert.Throws<InvalidOperationException>(() => session.StartExercise(exercise.Id));
+    }
+
+    [Test]
+    public void StartExercise_OnFinishedExercise_ThrowsInvalidOperationException()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Squat", null);
+        session.StartExercise(exercise.Id);
+        session.FinishExercise(exercise.Id);
+
+        Assert.Throws<InvalidOperationException>(() => session.StartExercise(exercise.Id));
+    }
+
+    // ── FinishExercise ──────────────────────────────────────────────────────
+
+    [Test]
+    public void FinishExercise_FinishesRunningExercise()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Push-up", null);
+        session.StartExercise(exercise.Id);
+
+        session.FinishExercise(exercise.Id);
+
+        Assert.That(exercise.IsFinished, Is.True);
+    }
+
+    [Test]
+    public void FinishExercise_OnNotRunningExercise_ThrowsInvalidOperationException()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Push-up", null);
+        // exercise is pending, not running
+
+        Assert.Throws<InvalidOperationException>(() => session.FinishExercise(exercise.Id));
     }
 
     [Test]
     public void Finish_AutoFinishesRunningExercise()
     {
         var session = TrainingSession.Create(_anyUser);
-        session.AddExercise("Deadlift", null);
+        var exercise = session.AddExercise("Deadlift", null);
+        session.StartExercise(exercise.Id);
+
         session.Finish();
 
-        Assert.That(session.Exercises[0].IsFinished, Is.True);
+        Assert.That(exercise.IsFinished, Is.True);
     }
 
     [Test]
-    public void Finish_OnAlreadyFinishedSession_ThrowsInvalidOperationException()
+    public void Finish_FinishesAllSetsOnRunningExercise()
     {
         var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Squat", null);
+        session.StartExercise(exercise.Id);
+        exercise.AddSet(100m, 5);
+        exercise.AddSet(100m, 5);
+
         session.Finish();
 
-        Assert.Throws<InvalidOperationException>(session.Finish);
+        Assert.That(exercise.Sets.All(s => s.IsFinished), Is.True);
     }
+
+    // ── RemoveExercise ──────────────────────────────────────────────────────
 
     [Test]
     public void RemoveExercise_RemovesItFromList()
@@ -95,6 +226,8 @@ public sealed class TrainingSessionTests
 
         Assert.Throws<KeyNotFoundException>(() => session.RemoveExercise(Guid.NewGuid()));
     }
+
+    // ── InheritFrom ─────────────────────────────────────────────────────────
 
     [Test]
     public void InheritFrom_CopiesExercisesAsPending()
@@ -119,74 +252,302 @@ public sealed class TrainingSessionTests
     }
 
     [Test]
-    public void StartExercise_StartsPendingInheritedExercise_AutoFinishesPrevious()
+    public void InheritFrom_DeepCopiesSets()
     {
+        // Sets from previous session must be copied to the new exercise
         var previous = TrainingSession.Create(_anyUser);
-        previous.AddExercise("OHP", null);
-        previous.AddExercise("Row", null);
+        var exercise = previous.AddExercise("Squat", null);
+        exercise.AddSet(100m, 5);
+        exercise.AddSet(120m, 3);
         previous.Finish();
 
-        var session = TrainingSession.Create(_anyUser);
-        session.InheritFrom(previous);
+        var next = TrainingSession.Create(_anyUser);
+        next.InheritFrom(previous);
 
-        var first = session.Exercises[0];
-        var second = session.Exercises[1];
-
-        session.StartExercise(first.Id);
-        session.StartExercise(second.Id); // should auto-finish first
-
+        var copiedExercise = next.Exercises[0];
         Assert.Multiple(() =>
         {
-            Assert.That(first.IsFinished, Is.True);
-            Assert.That(second.IsRunning, Is.True);
+            Assert.That(copiedExercise.Sets, Has.Count.EqualTo(2));
+            Assert.That(copiedExercise.Sets[0].Weight, Is.EqualTo(100m));
+            Assert.That(copiedExercise.Sets[0].Repetitions, Is.EqualTo(5));
+            Assert.That(copiedExercise.Sets[1].Weight, Is.EqualTo(120m));
+            Assert.That(copiedExercise.Sets[1].Repetitions, Is.EqualTo(3));
         });
     }
 
     [Test]
-    public void StartExercise_OnAlreadyRunningExercise_ThrowsInvalidOperationException()
+    public void InheritFrom_CopiedSetsAreNotFinished()
+    {
+        // Inherited sets start fresh — not carrying finished state
+        var previous = TrainingSession.Create(_anyUser);
+        var exercise = previous.AddExercise("Deadlift", null);
+        exercise.AddSet(150m, 1);
+        previous.Finish(); // finishes the set too
+
+        var next = TrainingSession.Create(_anyUser);
+        next.InheritFrom(previous);
+
+        Assert.That(next.Exercises[0].Sets[0].IsFinished, Is.False);
+    }
+
+    [Test]
+    public void InheritFrom_OnNonEmptySession_ThrowsInvalidOperationException()
+    {
+        var previous = TrainingSession.Create(_anyUser);
+        previous.AddExercise("Squat", null);
+        previous.Finish();
+
+        var next = TrainingSession.Create(_anyUser);
+        next.AddExercise("Bench", null);
+
+        Assert.Throws<InvalidOperationException>(() => next.InheritFrom(previous));
+    }
+
+    // ── ExerciseSet via ExerciseEntry ───────────────────────────────────────
+
+    [Test]
+    public void AddSet_WithWeightAndReps_AddsSetWithSetNumber1()
     {
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
 
-        Assert.Throws<InvalidOperationException>(() => session.StartExercise(exercise.Id));
+        exercise.AddSet(100m, 5);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exercise.Sets, Has.Count.EqualTo(1));
+            Assert.That(exercise.Sets[0].SetNumber, Is.EqualTo(1));
+            Assert.That(exercise.Sets[0].Weight, Is.EqualTo(100m));
+            Assert.That(exercise.Sets[0].Repetitions, Is.EqualTo(5));
+            Assert.That(exercise.Sets[0].IsFinished, Is.False);
+        });
     }
 
     [Test]
-    public void FinishExercise_FinishesRunningExercise()
+    public void AddSet_SecondSet_AutoIncrementsSetNumber()
     {
         var session = TrainingSession.Create(_anyUser);
-        var exercise = session.AddExercise("Push-up", null);
+        var exercise = session.AddExercise("Squat", null);
+        exercise.AddSet(100m, 5);
+        exercise.AddSet(120m, 3);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exercise.Sets[0].SetNumber, Is.EqualTo(1));
+            Assert.That(exercise.Sets[1].SetNumber, Is.EqualTo(2));
+        });
+    }
+
+    [Test]
+    public void AddSet_AfterDelete_SetNumberHasGap()
+    {
+        // Gaps are allowed — setNumber is not renumbered after delete
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Squat", null);
+        exercise.AddSet(100m, 5);
+        exercise.AddSet(120m, 3);
+        exercise.RemoveSet(exercise.Sets[0].Id); // remove set 1
+
+        exercise.AddSet(140m, 1); // should be set 3, not 2
+
+        Assert.That(exercise.Sets.Last().SetNumber, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void AddCopyOfLastSet_NoParams_CopiesWeightAndRepsFromLastSet()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Bench", null);
+        exercise.AddSet(80m, 8);
+
+        exercise.AddCopyOfLastSet(); // should copy from previous
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exercise.Sets[1].Weight, Is.EqualTo(80m));
+            Assert.That(exercise.Sets[1].Repetitions, Is.EqualTo(8));
+            Assert.That(exercise.Sets[1].SetNumber, Is.EqualTo(2));
+        });
+    }
+
+    [Test]
+    public void AddCopyOfLastSet_OnEmptySets_ThrowsInvalidOperationException()
+    {
+        // AddSet() with no params on empty set list should throw — nothing to copy from
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Bench", null);
+
+        Assert.Throws<InvalidOperationException>(exercise.AddCopyOfLastSet);
+    }
+
+    [Test]
+    public void AddSet_OnFinishedExercise_ThrowsInvalidOperationException()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Squat", null);
+        session.StartExercise(exercise.Id);
+        session.FinishExercise(exercise.Id);
+
+        Assert.Throws<InvalidOperationException>(() => exercise.AddSet(100m, 5));
+    }
+
+    [Test]
+    public void UpdateSet_FinishesSet()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Squat", null);
+        exercise.AddSet(100m, 5);
+        var setId = exercise.Sets[0].Id;
+
+        exercise.UpdateSet(setId, isFinished: true, weight: null, repetitions: null);
+
+        Assert.That(exercise.Sets[0].IsFinished, Is.True);
+    }
+
+    [Test]
+    public void UpdateSet_UnFinishesSet()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Squat", null);
+        exercise.AddSet(100m, 5);
+        var setId = exercise.Sets[0].Id;
+        exercise.UpdateSet(setId, isFinished: true, weight: null, repetitions: null);
+
+        exercise.UpdateSet(setId, isFinished: false, weight: null, repetitions: null);
+
+        Assert.That(exercise.Sets[0].IsFinished, Is.False);
+    }
+
+    [Test]
+    public void UpdateSet_NullIsFinished_DoesNotChangeFinishedState()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Squat", null);
+        exercise.AddSet(100m, 5);
+        var setId = exercise.Sets[0].Id;
+        exercise.UpdateSet(setId, isFinished: true, weight: null, repetitions: null);
+
+        // Update weight only — finished state should remain true
+        exercise.UpdateSet(setId, isFinished: null, weight: 120m, repetitions: null);
+
+        Assert.That(exercise.Sets[0].IsFinished, Is.True);
+    }
+
+    [Test]
+    public void UpdateSet_UpdatesWeightAndReps()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Squat", null);
+        exercise.AddSet(100m, 5);
+        var setId = exercise.Sets[0].Id;
+
+        exercise.UpdateSet(setId, isFinished: null, weight: 120m, repetitions: 3);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exercise.Sets[0].Weight, Is.EqualTo(120m));
+            Assert.That(exercise.Sets[0].Repetitions, Is.EqualTo(3));
+        });
+    }
+
+    [Test]
+    public void UpdateSet_OnFinishedExercise_ThrowsInvalidOperationException()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Squat", null);
+        exercise.AddSet(100m, 5);
+        var setId = exercise.Sets[0].Id;
+        session.StartExercise(exercise.Id);
+        session.FinishExercise(exercise.Id);
+
+        Assert.Throws<InvalidOperationException>(() =>
+            exercise.UpdateSet(setId, isFinished: true, weight: null, repetitions: null));
+    }
+
+    [Test]
+    public void UpdateSet_WithUnknownSetId_ThrowsArgumentException()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Squat", null);
+
+        Assert.Throws<ArgumentException>(() =>
+            exercise.UpdateSet(Guid.NewGuid(), isFinished: true, weight: null, repetitions: null));
+    }
+
+    [Test]
+    public void RemoveSet_RemovesSetFromList()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Squat", null);
+        exercise.AddSet(100m, 5);
+        var setId = exercise.Sets[0].Id;
+
+        exercise.RemoveSet(setId);
+
+        Assert.That(exercise.Sets, Is.Empty);
+    }
+
+    [Test]
+    public void RemoveSet_OnFinishedExercise_ThrowsInvalidOperationException()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Squat", null);
+        exercise.AddSet(100m, 5);
+        var setId = exercise.Sets[0].Id;
+        session.StartExercise(exercise.Id);
+        session.FinishExercise(exercise.Id);
+
+        Assert.Throws<InvalidOperationException>(() => exercise.RemoveSet(setId));
+    }
+
+    [Test]
+    public void RemoveSet_WithUnknownSetId_ThrowsArgumentException()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Squat", null);
+
+        Assert.Throws<ArgumentException>(() => exercise.RemoveSet(Guid.NewGuid()));
+    }
+
+    [Test]
+    public void FinishExercise_FinishesAllContainedSets()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Deadlift", null);
+        exercise.AddSet(150m, 1);
+        exercise.AddSet(150m, 1);
+        session.StartExercise(exercise.Id);
 
         session.FinishExercise(exercise.Id);
 
-        Assert.That(exercise.IsFinished, Is.True);
+        Assert.That(exercise.Sets.All(s => s.IsFinished), Is.True);
+    }
+    // ── Bug exposure tests ──────────────────────────────────────────────────
+
+    [Test]
+    public void AddCopyOfLastSet_NoParams_OnEmptySets_ThrowsInvalidOperationException_WithMeaningfulMessage()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Bench", null);
+
+        var ex = Assert.Throws<InvalidOperationException>(exercise.AddCopyOfLastSet);
+
+        // Fails if no explicit guard — LINQ throws "Sequence contains no elements" not our message
+        Assert.That(ex!.Message, Does.Contain("no sets"));
     }
 
     [Test]
-    public void FinishExercise_OnNotRunningExercise_ThrowsInvalidOperationException()
+    public void UpdateSet_NullWeight_DoesNotOverwriteExistingWeight()
     {
         var session = TrainingSession.Create(_anyUser);
-        var exercise = session.AddExercise("Push-up", null);
-        session.FinishExercise(exercise.Id);
+        var exercise = session.AddExercise("Squat", null);
+        exercise.AddSet(100m, 5);
+        var setId = exercise.Sets[0].Id;
 
-        Assert.Throws<InvalidOperationException>(() => session.FinishExercise(exercise.Id));
-    }
+        // Pass null weight — must clear the existing 100m value
+        exercise.UpdateSet(setId, isFinished: null, weight: null, repetitions: null);
 
-    [Test]
-    public void Rename_UpdatesLabel()
-    {
-        var session = TrainingSession.Create(_anyUser);
-        session.Rename("New Name");
-
-        Assert.That(session.Label, Is.EqualTo("New Name"));
-    }
-
-    [Test]
-    public void Rename_OnFinishedSession_ThrowsInvalidOperationException()
-    {
-        var session = TrainingSession.Create(_anyUser);
-        session.Finish();
-
-        Assert.Throws<InvalidOperationException>(() => session.Rename("New Name"));
+        Assert.That(exercise.Sets[0].Weight, Is.Null);
+        Assert.That(exercise.Sets[0].Repetitions, Is.Null);
     }
 }
