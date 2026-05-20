@@ -16,9 +16,13 @@ public sealed class SupabaseTrainingSessionRepository(GymApiDbContext db) : ITra
             .AnyAsync(s => s.Id == session.Id, ct);
 
         if (exists)
+        {
             db.TrainingSessions.Update(session);
+        }
         else
+        {
             await db.TrainingSessions.AddAsync(session, ct);
+        }
 
         await db.SaveChangesAsync(ct);
     }
@@ -47,7 +51,9 @@ public sealed class SupabaseTrainingSessionRepository(GymApiDbContext db) : ITra
             .Where(s => s.UserId == userId);
 
         if (status.HasValue)
+        {
             query = query.Where(s => s.Status == status.Value);
+        }
 
         query = ApplySort(query, sort);
 
@@ -67,7 +73,9 @@ public sealed class SupabaseTrainingSessionRepository(GymApiDbContext db) : ITra
             .Where(s => s.UserId == userId);
 
         if (status.HasValue)
+        {
             query = query.Where(s => s.Status == status.Value);
+        }
 
         return await query.CountAsync(ct);
     }
@@ -85,7 +93,9 @@ public sealed class SupabaseTrainingSessionRepository(GymApiDbContext db) : ITra
         IQueryable<TrainingSession> query, string? sort)
     {
         if (string.IsNullOrWhiteSpace(sort))
+        {
             return query.OrderByDescending(s => s.CreatedAt);
+        }
 
         var parts = sort.Split(':');
         var property = parts[0].ToLowerInvariant();
