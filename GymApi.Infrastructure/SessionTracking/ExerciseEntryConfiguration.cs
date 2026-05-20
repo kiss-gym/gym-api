@@ -15,7 +15,6 @@ internal sealed class ExerciseEntryConfiguration : IEntityTypeConfiguration<Exer
         builder.Property(e => e.Id)
             .HasColumnName("id");
 
-        // Shadow FK — defined on TrainingSessionConfiguration, declared here for column naming
         builder.Property<Guid>("session_id")
             .HasColumnName("session_id")
             .IsRequired();
@@ -34,11 +33,18 @@ internal sealed class ExerciseEntryConfiguration : IEntityTypeConfiguration<Exer
         builder.Property(e => e.RealEndAt)
             .HasColumnName("real_end_at");
 
-        // ExerciseProperty is a sealed record — serialized as a jsonb array.
-        // EF 10 maps IReadOnlyList<record> to JSON natively via a primitive collection.
         builder.Property(e => e.Properties)
             .HasColumnName("properties")
             .HasColumnType("jsonb")
             .IsRequired();
+
+        builder.HasMany(e => e.Sets)
+            .WithOne()
+            .HasForeignKey("exercise_id")
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(e => e.Sets)
+            .HasField("_sets")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

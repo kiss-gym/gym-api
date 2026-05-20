@@ -2,44 +2,39 @@ using GymApi.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
-using Microsoft.EntityFrameworkCore.Storage;
 using NUnit.Framework;
 
 namespace GymApi.Tests.Infrastructure;
 
 /// <summary>
-/// Base class for repository integration tests against real Supabase databases.
-/// Requires appsettings.Development.json with a valid Supabase:ConnectionString.
-/// Shares a single _sharedDataSource (NpgsqlDataSource) across all tests to fit the connection pool limit
-/// Cleans up test data via _transaction.RollbackAsync 
+/// Base class for repository integration tests.
+/// Shares a single NpgsqlDataSource across all tests to avoid exhausting
+/// Supabase's free plan connection pool limit (15 connections in session mode).
 /// </summary>
 public abstract class RepositoryIntegrationTestBase
 {
-    // Shared across the entire test run — one pool, one data source
     private static readonly NpgsqlDataSource _sharedDataSource = BuildDataSource();
-    
+
     protected GymApiDbContext DbContext { get; private set; } = null!;
-    private IDbContextTransaction? _transaction;
 
     [SetUp]
-    public async Task SetUpDatabase()
+    public void SetUpDatabase()
     {
         var options = new DbContextOptionsBuilder<GymApiDbContext>()
             .UseNpgsql(_sharedDataSource)
             .Options;
 
         DbContext = new GymApiDbContext(options);
-        _transaction = await DbContext.Database.BeginTransactionAsync();
     }
 
     [TearDown]
     public async Task TearDownDatabase()
     {
-        if (_transaction != null)
-        {
-            await _transaction.RollbackAsync();
-            await _transaction.DisposeAsync();
-        }
+        // FK-safe order: deepest child first
+        await DbContext.ExerciseSets.ExecuteDeleteAsync();
+        await DbContext.ExerciseEntries.ExecuteDeleteAsync();
+        await DbContext.TrainingSessions.ExecuteDeleteAsync();
+        await DbContext.Users.ExecuteDeleteAsync();
         await DbContext.DisposeAsync();
     }
 
@@ -63,7 +58,7 @@ public abstract class RepositoryIntegrationTestBase
     private static string FindSolutionRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !dir.GetFiles("*.sln").Any())
+        while (dir != null && dir.GetFiles("*.sln").Length == 0)
         {
             dir = dir.Parent;
         }
