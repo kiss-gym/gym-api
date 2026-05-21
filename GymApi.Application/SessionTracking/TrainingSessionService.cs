@@ -34,7 +34,8 @@ public sealed class TrainingSessionService(
         return session;
     }
 
-    public async Task<TrainingSession> GetSessionAsync(Guid sessionId, CancellationToken ct = default)
+    public async Task<TrainingSession> GetSessionAsync(
+        Guid sessionId, CancellationToken ct = default)
     {
         EnsureAuthenticated();
 
@@ -60,9 +61,7 @@ public sealed class TrainingSessionService(
     }
 
     public async Task<ExerciseEntry> StartExerciseAsync(
-        Guid sessionId,
-        Guid exerciseId,
-        CancellationToken ct = default)
+        Guid sessionId, Guid exerciseId, CancellationToken ct = default)
     {
         var session = await GetSessionAsync(sessionId, ct);
         var exercise = session.StartExercise(exerciseId);
@@ -71,9 +70,7 @@ public sealed class TrainingSessionService(
     }
 
     public async Task<ExerciseEntry> FinishExerciseAsync(
-        Guid sessionId,
-        Guid exerciseId,
-        CancellationToken ct = default)
+        Guid sessionId, Guid exerciseId, CancellationToken ct = default)
     {
         var session = await GetSessionAsync(sessionId, ct);
         session.FinishExercise(exerciseId);
@@ -83,9 +80,7 @@ public sealed class TrainingSessionService(
     }
 
     public async Task RemoveExerciseAsync(
-        Guid sessionId,
-        Guid exerciseId,
-        CancellationToken ct = default)
+        Guid sessionId, Guid exerciseId, CancellationToken ct = default)
     {
         var session = await GetSessionAsync(sessionId, ct);
         session.RemoveExercise(exerciseId);
@@ -93,11 +88,8 @@ public sealed class TrainingSessionService(
     }
 
     public async Task<TrainingSession> RenameSessionAsync(
-        Guid sessionId,
-        string label,
-        CancellationToken ct = default)
+        Guid sessionId, string label, CancellationToken ct = default)
     {
-        
         var session = await GetSessionAsync(sessionId, ct);
         session.Rename(label);
         await repository.SaveAsync(session, ct);
@@ -105,8 +97,7 @@ public sealed class TrainingSessionService(
     }
 
     public async Task<TrainingSession> FinishSessionAsync(
-        Guid sessionId,
-        CancellationToken ct = default)
+        Guid sessionId, CancellationToken ct = default)
     {
         var session = await GetSessionAsync(sessionId, ct);
         session.Finish();
@@ -114,14 +105,14 @@ public sealed class TrainingSessionService(
         return session;
     }
 
-    public async Task<IReadOnlyList<TrainingSession>> GetSessionsAsync(SessionStatus? status = null,
+    public async Task<IReadOnlyList<TrainingSession>> GetSessionsAsync(
+        SessionStatus? status = null,
         string? sort = null,
         int? page = null,
         int? pageSize = null,
         CancellationToken ct = default)
     {
         EnsureAuthenticated();
-
         return await repository.GetSessionsAsync(
             userId: userContext.UserId!.Value,
             status: status,
@@ -136,7 +127,6 @@ public sealed class TrainingSessionService(
         CancellationToken ct = default)
     {
         EnsureAuthenticated();
-
         return await repository.CountSessionsAsync(
             userId: userContext.UserId!.Value,
             status: status,
@@ -148,7 +138,95 @@ public sealed class TrainingSessionService(
         await repository.DeleteAsync(sessionId, ct);
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+    // ── Set operations ────────────────────────────────────────────────────────
+
+    public async Task<ExerciseSet> AddSetAsync(
+        Guid sessionId,
+        Guid exerciseId,
+        decimal? weight,
+        int? repetitions,
+        CancellationToken ct = default)
+    {
+        var session = await GetSessionAsync(sessionId, ct);
+        var exercise = FindExercise(session, exerciseId);
+        exercise.AddSet(weight, repetitions);
+        await repository.SaveAsync(session, ct);
+        return exercise.SortedSets[^1];
+    }
+
+    public async Task<ExerciseSet> AddCopyOfLastSetAsync(
+        Guid sessionId,
+        Guid exerciseId,
+        CancellationToken ct = default)
+    {
+        var session = await GetSessionAsync(sessionId, ct);
+        var exercise = FindExercise(session, exerciseId);
+        exercise.AddCopyOfLastSet();
+        await repository.SaveAsync(session, ct);
+        return exercise.SortedSets[^1];
+    }
+
+    public async Task<ExerciseSet> UpdateSetAsync(
+        Guid sessionId,
+        Guid exerciseId,
+        Guid setId,
+        decimal? weight,
+        int? repetitions,
+        CancellationToken ct = default)
+    {
+        var session = await GetSessionAsync(sessionId, ct);
+        var exercise = FindExercise(session, exerciseId);
+        exercise.UpdateSet(setId, weight, repetitions);
+        await repository.SaveAsync(session, ct);
+        return exercise.SortedSets.First(s => s.Id == setId);
+    }
+
+    public async Task DeleteSetAsync(
+        Guid sessionId,
+        Guid exerciseId,
+        Guid setId,
+        CancellationToken ct = default)
+    {
+        var session = await GetSessionAsync(sessionId, ct);
+        var exercise = FindExercise(session, exerciseId);
+        exercise.RemoveSet(setId);
+        await repository.SaveAsync(session, ct);
+    }
+
+    public async Task<ExerciseSet> CompleteSetAsync(
+        Guid sessionId,
+        Guid exerciseId,
+        Guid setId,
+        CancellationToken ct = default)
+    {
+        var session = await GetSessionAsync(sessionId, ct);
+        var exercise = FindExercise(session, exerciseId);
+        exercise.CompleteSet(setId);
+        await repository.SaveAsync(session, ct);
+        return exercise.SortedSets.First(s => s.Id == setId);
+    }
+
+    public async Task<ExerciseSet> UnCompleteSetAsync(
+        Guid sessionId,
+        Guid exerciseId,
+        Guid setId,
+        CancellationToken ct = default)
+    {
+        var session = await GetSessionAsync(sessionId, ct);
+        var exercise = FindExercise(session, exerciseId);
+        exercise.UnCompleteSet(setId);
+        await repository.SaveAsync(session, ct);
+        return exercise.SortedSets.First(s => s.Id == setId);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static ExerciseEntry FindExercise(TrainingSession session, Guid exerciseId)
+    {
+        return session.Exercises.FirstOrDefault(e => e.Id == exerciseId)
+               ?? throw new KeyNotFoundException(
+                   $"Exercise {exerciseId} not found in session {session.Id}.");
+    }
 
     private void EnsureAuthenticated()
     {

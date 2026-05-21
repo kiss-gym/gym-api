@@ -50,7 +50,7 @@ public sealed class TrainingSession
         foreach (var ex in parentSession.Exercises)
         {
             var exerciseEntry = ExerciseEntry.CreatePending(ex.AutoLabel, ex.PhotoUrl, ex.Properties);
-            foreach(var st in ex.Sets)
+            foreach(var st in ex.SortedSets)
             {
                 exerciseEntry.AddSet(st.Weight, st.Repetitions);
             }

@@ -204,7 +204,7 @@ public sealed class TrainingSessionTests
 
         session.Finish();
 
-        Assert.That(exercise.Sets.All(s => s.IsCompleted), Is.True);
+        Assert.That(exercise.SortedSets.All(s => s.IsCompleted), Is.True);
     }
 
     // ── RemoveExercise ──────────────────────────────────────────────────────
@@ -267,11 +267,11 @@ public sealed class TrainingSessionTests
         var copiedExercise = next.Exercises[0];
         Assert.Multiple(() =>
         {
-            Assert.That(copiedExercise.Sets, Has.Count.EqualTo(2));
-            Assert.That(copiedExercise.Sets[0].Weight, Is.EqualTo(100m));
-            Assert.That(copiedExercise.Sets[0].Repetitions, Is.EqualTo(5));
-            Assert.That(copiedExercise.Sets[1].Weight, Is.EqualTo(120m));
-            Assert.That(copiedExercise.Sets[1].Repetitions, Is.EqualTo(3));
+            Assert.That(copiedExercise.SortedSets, Has.Count.EqualTo(2));
+            Assert.That(copiedExercise.SortedSets[0].Weight, Is.EqualTo(100m));
+            Assert.That(copiedExercise.SortedSets[0].Repetitions, Is.EqualTo(5));
+            Assert.That(copiedExercise.SortedSets[1].Weight, Is.EqualTo(120m));
+            Assert.That(copiedExercise.SortedSets[1].Repetitions, Is.EqualTo(3));
         });
     }
 
@@ -287,7 +287,7 @@ public sealed class TrainingSessionTests
         var next = TrainingSession.Create(_anyUser);
         next.InheritFrom(previous);
 
-        Assert.That(next.Exercises[0].Sets[0].IsCompleted, Is.False);
+        Assert.That(next.Exercises[0].SortedSets[0].IsCompleted, Is.False);
     }
 
     [Test]
@@ -315,11 +315,11 @@ public sealed class TrainingSessionTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(exercise.Sets, Has.Count.EqualTo(1));
-            Assert.That(exercise.Sets[0].SetNumber, Is.EqualTo(1));
-            Assert.That(exercise.Sets[0].Weight, Is.EqualTo(100m));
-            Assert.That(exercise.Sets[0].Repetitions, Is.EqualTo(5));
-            Assert.That(exercise.Sets[0].IsCompleted, Is.False);
+            Assert.That(exercise.SortedSets, Has.Count.EqualTo(1));
+            Assert.That(exercise.SortedSets[0].SetNumber, Is.EqualTo(1));
+            Assert.That(exercise.SortedSets[0].Weight, Is.EqualTo(100m));
+            Assert.That(exercise.SortedSets[0].Repetitions, Is.EqualTo(5));
+            Assert.That(exercise.SortedSets[0].IsCompleted, Is.False);
         });
     }
 
@@ -333,8 +333,8 @@ public sealed class TrainingSessionTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(exercise.Sets[0].SetNumber, Is.EqualTo(1));
-            Assert.That(exercise.Sets[1].SetNumber, Is.EqualTo(2));
+            Assert.That(exercise.SortedSets[0].SetNumber, Is.EqualTo(1));
+            Assert.That(exercise.SortedSets[1].SetNumber, Is.EqualTo(2));
         });
     }
 
@@ -346,11 +346,11 @@ public sealed class TrainingSessionTests
         var exercise = session.AddExercise("Squat", null);
         exercise.AddSet(100m, 5);
         exercise.AddSet(120m, 3);
-        exercise.RemoveSet(exercise.Sets[0].Id); // remove set 1
+        exercise.RemoveSet(exercise.SortedSets[0].Id); // remove set 1
 
         exercise.AddSet(140m, 1); // should be set 3, not 2
 
-        Assert.That(exercise.Sets.Last().SetNumber, Is.EqualTo(3));
+        Assert.That(exercise.SortedSets.Last().SetNumber, Is.EqualTo(3));
     }
 
     [Test]
@@ -364,9 +364,9 @@ public sealed class TrainingSessionTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(exercise.Sets[1].Weight, Is.EqualTo(80m));
-            Assert.That(exercise.Sets[1].Repetitions, Is.EqualTo(8));
-            Assert.That(exercise.Sets[1].SetNumber, Is.EqualTo(2));
+            Assert.That(exercise.SortedSets[1].Weight, Is.EqualTo(80m));
+            Assert.That(exercise.SortedSets[1].Repetitions, Is.EqualTo(8));
+            Assert.That(exercise.SortedSets[1].SetNumber, Is.EqualTo(2));
         });
     }
 
@@ -397,11 +397,11 @@ public sealed class TrainingSessionTests
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
         exercise.AddSet(100m, 5);
-        var setId = exercise.Sets[0].Id;
+        var setId = exercise.SortedSets[0].Id;
 
         exercise.CompleteSet(setId);
 
-        Assert.That(exercise.Sets[0].IsCompleted, Is.True);
+        Assert.That(exercise.SortedSets[0].IsCompleted, Is.True);
     }
 
     [Test]
@@ -410,12 +410,12 @@ public sealed class TrainingSessionTests
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
         exercise.AddSet(100m, 5);
-        var setId = exercise.Sets[0].Id;
+        var setId = exercise.SortedSets[0].Id;
         
         exercise.CompleteSet(setId);
         exercise.UnCompleteSet(setId);
 
-        Assert.That(exercise.Sets[0].IsCompleted, Is.False);
+        Assert.That(exercise.SortedSets[0].IsCompleted, Is.False);
     }
 
     [Test]
@@ -424,14 +424,14 @@ public sealed class TrainingSessionTests
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
         exercise.AddSet(100m, 5);
-        var setId = exercise.Sets[0].Id;
+        var setId = exercise.SortedSets[0].Id;
 
         exercise.UpdateSet(setId, weight: 120m, repetitions: 3);
 
         Assert.Multiple(() =>
         {
-            Assert.That(exercise.Sets[0].Weight, Is.EqualTo(120m));
-            Assert.That(exercise.Sets[0].Repetitions, Is.EqualTo(3));
+            Assert.That(exercise.SortedSets[0].Weight, Is.EqualTo(120m));
+            Assert.That(exercise.SortedSets[0].Repetitions, Is.EqualTo(3));
         });
     }
 
@@ -441,7 +441,7 @@ public sealed class TrainingSessionTests
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
         exercise.AddSet(100m, 5);
-        var setId = exercise.Sets[0].Id;
+        var setId = exercise.SortedSets[0].Id;
         session.StartExercise(exercise.Id);
         session.FinishExercise(exercise.Id);
 
@@ -465,11 +465,11 @@ public sealed class TrainingSessionTests
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
         exercise.AddSet(100m, 5);
-        var setId = exercise.Sets[0].Id;
+        var setId = exercise.SortedSets[0].Id;
 
         exercise.RemoveSet(setId);
 
-        Assert.That(exercise.Sets, Is.Empty);
+        Assert.That(exercise.SortedSets, Is.Empty);
     }
 
     [Test]
@@ -478,7 +478,7 @@ public sealed class TrainingSessionTests
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
         exercise.AddSet(100m, 5);
-        var setId = exercise.Sets[0].Id;
+        var setId = exercise.SortedSets[0].Id;
         session.StartExercise(exercise.Id);
         session.FinishExercise(exercise.Id);
 
@@ -505,7 +505,7 @@ public sealed class TrainingSessionTests
 
         session.FinishExercise(exercise.Id);
 
-        Assert.That(exercise.Sets.All(s => s.IsCompleted), Is.True);
+        Assert.That(exercise.SortedSets.All(s => s.IsCompleted), Is.True);
     }
     // ── Bug exposure tests ──────────────────────────────────────────────────
 
@@ -527,12 +527,12 @@ public sealed class TrainingSessionTests
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
         exercise.AddSet(100m, 5);
-        var setId = exercise.Sets[0].Id;
+        var setId = exercise.SortedSets[0].Id;
 
         // Pass null weight — must clear the existing 100m value
         exercise.UpdateSet(setId, weight: null, repetitions: null);
 
-        Assert.That(exercise.Sets[0].Weight, Is.Null);
-        Assert.That(exercise.Sets[0].Repetitions, Is.Null);
+        Assert.That(exercise.SortedSets[0].Weight, Is.Null);
+        Assert.That(exercise.SortedSets[0].Repetitions, Is.Null);
     }
 }

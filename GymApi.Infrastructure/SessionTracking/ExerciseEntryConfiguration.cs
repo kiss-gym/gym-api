@@ -38,12 +38,12 @@ internal sealed class ExerciseEntryConfiguration : IEntityTypeConfiguration<Exer
             .HasColumnType("jsonb")
             .IsRequired();
 
-        builder.HasMany(e => e.Sets)
+        builder.HasMany(e => e.SortedSets)
             .WithOne()
             .HasForeignKey("exercise_id")
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Navigation(e => e.Sets)
+        builder.Navigation(e => e.SortedSets)
             .HasField("_sets")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
