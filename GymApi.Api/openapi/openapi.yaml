@@ -54,24 +54,20 @@ paths:
       parameters:
         - name: status
           in: query
-          description: Filter by session status (Active or Finished).
           schema:
             $ref: '#/components/schemas/SessionStatus'
         - name: sort
           in: query
-          description: "Sort criteria in format 'property[:asc|desc]'. \r\nSupported properties: finishedAt (default), createdAt.\r\nExample: finishedAt:desc"
           schema:
             type: string
         - name: page
           in: query
-          description: Page number (default 1).
           schema:
             type: integer
             format: int32
             default: 1
         - name: pageSize
           in: query
-          description: Items per page (default 10).
           schema:
             type: integer
             format: int32
@@ -137,12 +133,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SessionResponse'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
         '404':
           description: Not Found
           content:
@@ -169,11 +159,67 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
+  '/api/sessions/{sessionId}/finish':
+    post:
+      tags:
+        - Sessions
+      summary: Finish the session. Any running exercise is auto-finished first.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /api/sessions/active:
+    get:
+      tags:
+        - Sessions
+      summary: Get active sessions with optional pagination.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 10
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponsePagedResponse'
   '/api/sessions/{sessionId}/exercises':
     post:
       tags:
         - Sessions
-      summary: "Add a new exercise to the session and start it immediately.\r\nAny currently running exercise is auto-finished."
+      summary: Add a new exercise to the session.
       parameters:
         - name: sessionId
           in: path
@@ -199,12 +245,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExerciseResponse'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
         '404':
           description: Not Found
           content:
@@ -221,7 +261,7 @@ paths:
     post:
       tags:
         - Sessions
-      summary: "Start a pending (inherited) exercise.\r\nAny currently running exercise is auto-finished."
+      summary: Start a pending exercise.
       parameters:
         - name: sessionId
           in: path
@@ -335,13 +375,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
-  '/api/sessions/{sessionId}/finish':
-    post:
+  '/api/sessions/{sessionId}/exercises/{exerciseId}/sets':
+    get:
       tags:
         - Sessions
-      summary: Finish the session. Any running exercise is auto-finished first.
+      summary: Get all sets for an exercise.
       parameters:
         - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: exerciseId
           in: path
           required: true
           schema:
@@ -353,7 +399,50 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SessionResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExerciseSetResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    post:
+      tags:
+        - Sessions
+      summary: Add a new set to an exercise.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: exerciseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddSetRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/AddSetRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/AddSetRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseSetResponse'
         '404':
           description: Not Found
           content:
@@ -366,31 +455,221 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
-  /api/sessions/active:
-    get:
+  '/api/sessions/{sessionId}/exercises/{exerciseId}/sets/copy-last':
+    post:
       tags:
         - Sessions
-      summary: Get active sessions with optional filtering and pagination.
+      summary: Add a copy of the last set to an exercise.
       parameters:
-        - name: page
-          in: query
+        - name: sessionId
+          in: path
+          required: true
           schema:
-            type: integer
-            format: int32
-            default: 1
-        - name: pageSize
-          in: query
+            type: string
+            format: uuid
+        - name: exerciseId
+          in: path
+          required: true
           schema:
-            type: integer
-            format: int32
-            default: 10
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseSetResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/sessions/{sessionId}/exercises/{exerciseId}/sets/{setId}':
+    patch:
+      tags:
+        - Sessions
+      summary: Update weight and repetitions of a set.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: exerciseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: setId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSetRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSetRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/UpdateSetRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SessionResponsePagedResponse'
+                $ref: '#/components/schemas/ExerciseSetResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    delete:
+      tags:
+        - Sessions
+      summary: Delete a set.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: exerciseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: setId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/sessions/{sessionId}/exercises/{exerciseId}/sets/{setId}/complete':
+    post:
+      tags:
+        - Sessions
+      summary: Mark a set as completed.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: exerciseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: setId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseSetResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/api/sessions/{sessionId}/exercises/{exerciseId}/sets/{setId}/uncomplete':
+    post:
+      tags:
+        - Sessions
+      summary: Mark a set as not completed.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: exerciseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: setId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseSetResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
   /api/users/me:
     get:
       tags:
@@ -425,6 +704,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ExercisePropertyDto'
+          nullable: true
+      additionalProperties: false
+    AddSetRequest:
+      type: object
+      properties:
+        weight:
+          type: number
+          format: double
+          nullable: true
+        repetitions:
+          type: integer
+          format: int32
           nullable: true
       additionalProperties: false
     CreateSessionRequest:
@@ -464,6 +755,7 @@ components:
       required:
         - autoLabel
         - properties
+        - sets
         - status
       type: object
       properties:
@@ -489,6 +781,30 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ExercisePropertyResponse'
+        sets:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExerciseSetResponse'
+      additionalProperties: false
+    ExerciseSetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        setNumber:
+          type: integer
+          format: int32
+        isCompleted:
+          type: boolean
+        weight:
+          type: number
+          format: double
+          nullable: true
+        repetitions:
+          type: integer
+          format: int32
+          nullable: true
       additionalProperties: false
     ProblemDetails:
       type: object
@@ -581,6 +897,18 @@ components:
       type: string
     StartExerciseRequest:
       type: object
+      additionalProperties: false
+    UpdateSetRequest:
+      type: object
+      properties:
+        weight:
+          type: number
+          format: double
+          nullable: true
+        repetitions:
+          type: integer
+          format: int32
+          nullable: true
       additionalProperties: false
     UserResponse:
       required:

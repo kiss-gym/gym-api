@@ -12,17 +12,16 @@ public sealed record ExerciseResponse(
     DateTimeOffset? StartedAt,
     DateTimeOffset? RealEndAt,
     [Required] string Status,
-    [Required] IReadOnlyList<ExercisePropertyResponse> Properties)
+    [Required] IReadOnlyList<ExercisePropertyResponse> Properties,
+    [Required] IReadOnlyList<ExerciseSetResponse> Sets)
 {
-    public static ExerciseResponse From(ExerciseEntry e)
-    {
-        return new ExerciseResponse(
-            e.Id,
+    public static ExerciseResponse From(ExerciseEntry e) =>
+        new(e.Id,
             e.AutoLabel,
             e.PhotoUrl,
             e.StartedAt,
             e.RealEndAt,
             e.IsPending ? "Pending" : e.IsRunning ? "Running" : "Finished",
-            e.Properties.Select(p => new ExercisePropertyResponse(p.Name, p.Value)).ToList());
-    }
+            e.Properties.Select(p => new ExercisePropertyResponse(p.Name, p.Value)).ToList(),
+            e.SortedSets.Select(ExerciseSetResponse.From).ToList());
 }
