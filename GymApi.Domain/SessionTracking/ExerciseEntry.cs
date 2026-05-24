@@ -50,8 +50,6 @@ public sealed class ExerciseEntry
 
     public void Update(string? autoLabel, string? photoUrl, IEnumerable<ExerciseProperty>? properties)
     {
-        EnsureExerciseIsNotFinished();
-
         if (autoLabel != null)
         {
             AutoLabel = autoLabel;
@@ -70,8 +68,6 @@ public sealed class ExerciseEntry
 
     public void AddSet(decimal? weight, int? repetitions)
     {
-        EnsureExerciseIsNotFinished();
-
         var setNumber = _sets.Count == 0 ? 1 : _sets.Max(s => s.SetNumber) + 1;
         var newSet = ExerciseSet.Create(setNumber, weight, repetitions);
         _sets.Add(newSet);
@@ -79,7 +75,6 @@ public sealed class ExerciseEntry
     
     public void AddCopyOfLastSet()
     {
-        EnsureExerciseIsNotFinished();
         if (_sets.Count == 0)
         {
             throw new InvalidOperationException("Cannot copy from last set — no sets exist yet.");
@@ -92,23 +87,18 @@ public sealed class ExerciseEntry
 
     public void UpdateSet(Guid setId, decimal? weight, int? repetitions)
     {
-        EnsureExerciseIsNotFinished();
-
         var set = FindSet(setId);
-
         set.Update(weight, repetitions);
     }
 
     public void CompleteSet(Guid setId)
     {
-        EnsureExerciseIsNotFinished();
         var set = FindSet(setId);
         set.Complete();
     }
 
     public void UnCompleteSet(Guid setId)
     {
-        EnsureExerciseIsNotFinished();
         var set = FindSet(setId);
         set.UnComplete();
     }
@@ -116,8 +106,6 @@ public sealed class ExerciseEntry
 
     public void RemoveSet(Guid setId)
     {
-        EnsureExerciseIsNotFinished();
-        
         var set = FindSet(setId);
         _sets.Remove(set);
     }
@@ -129,14 +117,6 @@ public sealed class ExerciseEntry
             RealEndAt = DateTimeOffset.UtcNow;
         }
         _sets.ForEach(s => s.Complete());
-    }
-    
-    private void EnsureExerciseIsNotFinished()
-    {
-        if (IsFinished)
-        {
-            throw new InvalidOperationException("The exercise is already finished.");
-        }
     }
     
     private ExerciseSet FindSet(Guid setId)  

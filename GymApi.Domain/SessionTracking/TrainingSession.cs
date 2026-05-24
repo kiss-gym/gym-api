@@ -38,7 +38,7 @@ public sealed class TrainingSession
     /// <summary>Populates the session with exercises from a parent session.</summary>
     public void InheritFrom(TrainingSession parentSession)
     {
-        EnsureSessionIsActive();
+        EnsureSessionIsNotFinished();
 
         if (_exercises.Count != 0)
         {
@@ -64,7 +64,7 @@ public sealed class TrainingSession
         string? photoUrl,
         IEnumerable<ExerciseProperty>? properties = null)
     {
-        EnsureSessionIsActive();
+        EnsureSessionIsNotFinished();
         AutoFinishRunningExercise();
 
         var exercise = ExerciseEntry.CreatePending(autoLabel, photoUrl, properties);
@@ -72,10 +72,21 @@ public sealed class TrainingSession
         return exercise;
     }
 
+    public void UpdateExercise(
+        Guid exerciseId,
+        string? autoLabel,
+        string? photoUrl,
+        IEnumerable<ExerciseProperty>? properties = null)
+    {
+        EnsureSessionIsNotFinished();
+        var exercise = FindExercise(exerciseId);
+        exercise.Update(autoLabel, photoUrl, properties);
+    }
+
     /// <summary>Starts a pending exercise, auto-finishing any running exercise.</summary>
     public ExerciseEntry StartExercise(Guid exerciseId)
     {
-        EnsureSessionIsActive();
+        EnsureSessionIsNotFinished();
         var exercise = FindExercise(exerciseId);
 
         if (!exercise.IsPending)
@@ -91,7 +102,7 @@ public sealed class TrainingSession
     /// <summary>Finishes a specific running exercise.</summary>
     public void FinishExercise(Guid exerciseId)
     {
-        EnsureSessionIsActive();
+        EnsureSessionIsNotFinished();
         var exercise = FindExercise(exerciseId);
 
         if (!exercise.IsRunning)
@@ -104,28 +115,70 @@ public sealed class TrainingSession
 
     public void RemoveExercise(Guid exerciseId)
     {
-        EnsureSessionIsActive();
+        EnsureSessionIsNotFinished();
         _exercises.Remove(FindExercise(exerciseId));
     }
 
     public void Rename(string label)
     {
-        EnsureSessionIsActive();
+        EnsureSessionIsNotFinished();
         Label = label;
     }
 
     /// <summary>Finishes the session. Auto-finishes any running exercise first.</summary>
     public void Finish()
     {
-        EnsureSessionIsActive();
+        EnsureSessionIsNotFinished();
         AutoFinishRunningExercise();
         Status = SessionStatus.Finished;
         FinishedAt = DateTimeOffset.UtcNow;
     }
 
-    private void EnsureSessionIsActive()
+    public void AddSet(Guid exerciseId, decimal? weight, int? repetitions)
     {
-        if (Status != SessionStatus.Active)
+        EnsureSessionIsNotFinished();
+        var exercise = FindExercise(exerciseId);
+        exercise.AddSet(weight, repetitions);
+    }
+
+    public void AddCopyOfLastSet(Guid exerciseId)
+    {
+        EnsureSessionIsNotFinished();
+        var exercise = FindExercise(exerciseId);
+        exercise.AddCopyOfLastSet();
+    }
+
+    public void UpdateSet(Guid exerciseId, Guid setId, decimal? weight, int? repetitions)
+    {
+        EnsureSessionIsNotFinished();
+        var exercise = FindExercise(exerciseId);
+        exercise.UpdateSet(setId, weight, repetitions);
+    }
+
+    public void CompleteSet(Guid exerciseId, Guid setId)
+    {
+        EnsureSessionIsNotFinished();
+        var exercise = FindExercise(exerciseId);
+        exercise.CompleteSet(setId);
+    }
+
+    public void UnCompleteSet(Guid exerciseId, Guid setId)
+    {
+        EnsureSessionIsNotFinished();
+        var exercise = FindExercise(exerciseId);
+        exercise.UnCompleteSet(setId);
+    }
+
+    public void RemoveSet(Guid exerciseId, Guid setId)
+    {
+        EnsureSessionIsNotFinished();
+        var exercise = FindExercise(exerciseId);
+        exercise.RemoveSet(setId);
+    }
+
+    private void EnsureSessionIsNotFinished()
+    {
+        if (Status == SessionStatus.Finished)
         {
             throw new InvalidOperationException("Session is already finished.");
         }
