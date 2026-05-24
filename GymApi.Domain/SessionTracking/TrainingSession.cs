@@ -84,7 +84,7 @@ public sealed class TrainingSession
     }
 
     /// <summary>Starts a pending exercise, auto-finishing any running exercise.</summary>
-    public ExerciseEntry StartExercise(Guid exerciseId)
+    public void StartExercise(Guid exerciseId)
     {
         EnsureSessionIsNotFinished();
         var exercise = FindExercise(exerciseId);
@@ -96,7 +96,6 @@ public sealed class TrainingSession
 
         AutoFinishRunningExercise();
         exercise.Start();
-        return exercise;
     }
 
     /// <summary>Finishes a specific running exercise.</summary>

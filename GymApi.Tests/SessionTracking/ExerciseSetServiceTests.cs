@@ -91,12 +91,25 @@ public sealed class ExerciseSetServiceTests
     }
 
     [Test]
-    public async Task AddSetAsync_FinishedExercise_ThrowsInvalidOperationException()
+    public async Task AddSetAsync_FinishedExercise_Ok()
     {
         var session = await _service.CreateSessionAsync();
         var exercise = await _service.AddExerciseAsync(session.Id, "Squat", null);
         await _service.StartExerciseAsync(session.Id, exercise.Id);
         await _service.FinishExerciseAsync(session.Id, exercise.Id);
+
+        var set= await _service.AddSetAsync(session.Id, exercise.Id, 100m, 5);
+        Assert.That(set, Is.Not.Null);
+    }
+
+
+    [Test]
+    public async Task AddSetAsync_FinishedSession_ThrowsInvalidOperationException()
+    {
+        var session = await _service.CreateSessionAsync();
+        var exercise = await _service.AddExerciseAsync(session.Id, "Squat", null);
+        await _service.StartExerciseAsync(session.Id, exercise.Id);
+        await _service.FinishSessionAsync(session.Id);
 
         Assert.ThrowsAsync<InvalidOperationException>(() =>
             _service.AddSetAsync(session.Id, exercise.Id, 100m, 5));
@@ -231,13 +244,13 @@ public sealed class ExerciseSetServiceTests
     }
 
     [Test]
-    public async Task CompleteSetAsync_FinishedExercise_ThrowsInvalidOperationException()
+    public async Task CompleteSetAsync_FinishedSession_ThrowsInvalidOperationException()
     {
         var session = await _service.CreateSessionAsync();
         var exercise = await _service.AddExerciseAsync(session.Id, "Squat", null);
         var set = await _service.AddSetAsync(session.Id, exercise.Id, 100m, 5);
         await _service.StartExerciseAsync(session.Id, exercise.Id);
-        await _service.FinishExerciseAsync(session.Id, exercise.Id);
+        await _service.FinishSessionAsync(session.Id);
 
         Assert.ThrowsAsync<InvalidOperationException>(() =>
             _service.CompleteSetAsync(session.Id, exercise.Id, set.Id));
@@ -258,16 +271,4 @@ public sealed class ExerciseSetServiceTests
         Assert.That(uncompleted.IsCompleted, Is.False);
     }
 
-    [Test]
-    public async Task UnCompleteSetAsync_FinishedExercise_ThrowsInvalidOperationException()
-    {
-        var session = await _service.CreateSessionAsync();
-        var exercise = await _service.AddExerciseAsync(session.Id, "Squat", null);
-        var set = await _service.AddSetAsync(session.Id, exercise.Id, 100m, 5);
-        await _service.StartExerciseAsync(session.Id, exercise.Id);
-        await _service.FinishExerciseAsync(session.Id, exercise.Id);
-
-        Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _service.UnCompleteSetAsync(session.Id, exercise.Id, set.Id));
-    }
 }

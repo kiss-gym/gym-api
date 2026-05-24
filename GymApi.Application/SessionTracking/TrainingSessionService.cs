@@ -57,7 +57,7 @@ public sealed class TrainingSessionService(
         var session = await GetSessionAsync(sessionId, ct);
         session.AddExercise(autoLabel, photoUrl, properties);
         await repository.SaveAsync(session, ct);
-        return FindExercise(session, session.Exercises.Last().Id);
+        return FindExercise(session, session.Exercises[^1].Id);
     }
 
     public async Task<ExerciseEntry> UpdateExerciseAsync(

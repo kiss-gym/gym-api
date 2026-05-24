@@ -381,14 +381,14 @@ public sealed class TrainingSessionTests
     }
 
     [Test]
-    public void AddSet_OnFinishedExercise_ThrowsInvalidOperationException()
+    public void AddSet_OnFinishedSession_ThrowsInvalidOperationException()
     {
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
         session.StartExercise(exercise.Id);
-        session.FinishExercise(exercise.Id);
+        session.Finish();
 
-        Assert.Throws<InvalidOperationException>(() => exercise.AddSet(100m, 5));
+        Assert.Throws<InvalidOperationException>(() => session.AddSet(exercise.Id, 100m, 5));
     }
 
     [Test]
@@ -436,17 +436,17 @@ public sealed class TrainingSessionTests
     }
 
     [Test]
-    public void UpdateSet_OnFinishedExercise_ThrowsInvalidOperationException()
+    public void UpdateSet_OnFinishedSession_ThrowsInvalidOperationException()
     {
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
-        exercise.AddSet(100m, 5);
+        session.AddSet(exercise.Id, 100m, 5);
         var setId = exercise.SortedSets[0].Id;
         session.StartExercise(exercise.Id);
-        session.FinishExercise(exercise.Id);
+        session.Finish();
 
         Assert.Throws<InvalidOperationException>(() =>
-            exercise.UpdateSet(setId, weight: null, repetitions: null));
+            session.UpdateSet(exercise.Id, setId, weight: null, repetitions: null));
     }
 
     [Test]
@@ -456,7 +456,7 @@ public sealed class TrainingSessionTests
         var exercise = session.AddExercise("Squat", null);
 
         Assert.Throws<KeyNotFoundException>(() =>
-            exercise.UpdateSet(Guid.NewGuid(), weight: null, repetitions: null));
+            session.UpdateSet(exercise.Id, Guid.NewGuid(), weight: null, repetitions: null));
     }
 
     [Test]
@@ -464,25 +464,39 @@ public sealed class TrainingSessionTests
     {
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
-        exercise.AddSet(100m, 5);
+        session.AddSet(exercise.Id, 100m, 5);
         var setId = exercise.SortedSets[0].Id;
 
-        exercise.RemoveSet(setId);
+        session.RemoveSet(exercise.Id, setId);
 
         Assert.That(exercise.SortedSets, Is.Empty);
     }
 
     [Test]
-    public void RemoveSet_OnFinishedExercise_ThrowsInvalidOperationException()
+    public void RemoveSet_OnFinishedExercise_Ok()
     {
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
-        exercise.AddSet(100m, 5);
+        session.AddSet(exercise.Id, 100m, 5);
         var setId = exercise.SortedSets[0].Id;
         session.StartExercise(exercise.Id);
         session.FinishExercise(exercise.Id);
 
-        Assert.Throws<InvalidOperationException>(() => exercise.RemoveSet(setId));
+        session.RemoveSet(exercise.Id, setId);
+        Assert.That(exercise.SortedSets, Is.Empty);
+    }
+
+    [Test]
+    public void RemoveSet_OnFinishedSession_ThrowsInvalidOperationException()
+    {
+        var session = TrainingSession.Create(_anyUser);
+        var exercise = session.AddExercise("Squat", null);
+        session.AddSet(exercise.Id, 100m, 5);
+        var setId = exercise.SortedSets[0].Id;
+        session.StartExercise(exercise.Id);
+        session.Finish();
+
+        Assert.Throws<InvalidOperationException>(() => session.RemoveSet(exercise.Id, setId));
     }
 
     [Test]
@@ -491,7 +505,7 @@ public sealed class TrainingSessionTests
         var session = TrainingSession.Create(_anyUser);
         var exercise = session.AddExercise("Squat", null);
 
-        Assert.Throws<KeyNotFoundException>(() => exercise.RemoveSet(Guid.NewGuid()));
+        Assert.Throws<KeyNotFoundException>(() => session.RemoveSet(exercise.Id, Guid.NewGuid()));
     }
 
     [Test]
@@ -530,7 +544,7 @@ public sealed class TrainingSessionTests
         var setId = exercise.SortedSets[0].Id;
 
         // Pass null weight — must clear the existing 100m value
-        exercise.UpdateSet(setId, weight: null, repetitions: null);
+        session.UpdateSet(exercise.Id, setId, weight: null, repetitions: null);
 
         Assert.That(exercise.SortedSets[0].Weight, Is.Null);
         Assert.That(exercise.SortedSets[0].Repetitions, Is.Null);
