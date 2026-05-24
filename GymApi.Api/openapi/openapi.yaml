@@ -257,6 +257,86 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
+  '/api/sessions/{sessionId}/exercises/{exerciseId}':
+    patch:
+      tags:
+        - Sessions
+      summary: Update an exercise.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: exerciseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExerciseRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExerciseRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/UpdateExerciseRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExerciseResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    delete:
+      tags:
+        - Sessions
+      summary: Remove an exercise from an active session.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: exerciseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
   '/api/sessions/{sessionId}/exercises/{exerciseId}/start':
     post:
       tags:
@@ -330,39 +410,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExerciseResponse'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
-        '409':
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
-  '/api/sessions/{sessionId}/exercises/{exerciseId}':
-    delete:
-      tags:
-        - Sessions
-      summary: Remove an exercise from an active session.
-      parameters:
-        - name: sessionId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: exerciseId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '204':
-          description: No Content
         '404':
           description: Not Found
           content:
@@ -897,6 +944,21 @@ components:
       type: string
     StartExerciseRequest:
       type: object
+      additionalProperties: false
+    UpdateExerciseRequest:
+      type: object
+      properties:
+        autoLabel:
+          type: string
+          nullable: true
+        photoUrl:
+          type: string
+          nullable: true
+        properties:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExercisePropertyDto'
+          nullable: true
       additionalProperties: false
     UpdateSetRequest:
       type: object

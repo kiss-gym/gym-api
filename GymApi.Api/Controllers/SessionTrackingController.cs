@@ -114,6 +114,20 @@ public sealed class SessionTrackingController(ITrainingSessionService service) :
         return StatusCode(StatusCodes.Status201Created, ExerciseResponse.From(exercise));
     }
 
+    /// <summary>Update an exercise.</summary>
+    [HttpPatch("{sessionId:guid}/exercises/{exerciseId:guid}")]
+    [ProducesResponseType<ExerciseResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpdateExercise(
+        Guid sessionId, Guid exerciseId, [FromBody] UpdateExerciseRequest request, CancellationToken ct)
+    {
+        var properties = request.Properties?.Select(p => new ExerciseProperty(p.Name, p.Value));
+        var exercise = await service.UpdateExerciseAsync(
+            sessionId, exerciseId, request.AutoLabel, request.PhotoUrl, properties, ct);
+        return Ok(ExerciseResponse.From(exercise));
+    }
+
     /// <summary>Start a pending exercise.</summary>
     [HttpPost("{sessionId:guid}/exercises/{exerciseId:guid}/start")]
     [ProducesResponseType<ExerciseResponse>(StatusCodes.Status200OK)]

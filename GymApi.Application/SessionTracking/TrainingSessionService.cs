@@ -60,6 +60,21 @@ public sealed class TrainingSessionService(
         return exercise;
     }
 
+    public async Task<ExerciseEntry> UpdateExerciseAsync(
+        Guid sessionId,
+        Guid exerciseId,
+        string? autoLabel,
+        string? photoUrl,
+        IEnumerable<ExerciseProperty>? properties = null,
+        CancellationToken ct = default)
+    {
+        var session = await GetSessionAsync(sessionId, ct);
+        var exercise = FindExercise(session, exerciseId);
+        exercise.Update(autoLabel, photoUrl, properties);
+        await repository.SaveAsync(session, ct);
+        return exercise;
+    }
+
     public async Task<ExerciseEntry> StartExerciseAsync(
         Guid sessionId, Guid exerciseId, CancellationToken ct = default)
     {

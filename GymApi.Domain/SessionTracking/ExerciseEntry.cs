@@ -6,8 +6,8 @@ namespace GymApi.Domain.SessionTracking;
 /// </summary>
 public sealed class ExerciseEntry
 {
-    public Guid Id { get; private set; }
-    public string AutoLabel { get; private init; } = "";
+    public Guid Id { get; private init; }
+    public string AutoLabel { get; private set; } = "";
     public string? PhotoUrl { get; private set; }
     public DateTimeOffset? StartedAt { get; private set; }
     public DateTimeOffset? RealEndAt { get; private set; }
@@ -46,6 +46,26 @@ public sealed class ExerciseEntry
         }
 
         StartedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Update(string? autoLabel, string? photoUrl, IEnumerable<ExerciseProperty>? properties)
+    {
+        EnsureExerciseIsNotFinished();
+
+        if (autoLabel != null)
+        {
+            AutoLabel = autoLabel;
+        }
+
+        if (photoUrl != null)
+        {
+            PhotoUrl = photoUrl;
+        }
+
+        if (properties != null)
+        {
+            Properties = properties.ToList();
+        }
     }
 
     public void AddSet(decimal? weight, int? repetitions)

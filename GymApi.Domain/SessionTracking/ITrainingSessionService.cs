@@ -22,6 +22,14 @@ public interface ITrainingSessionService
         IEnumerable<ExerciseProperty>? properties = null,
         CancellationToken ct = default);
 
+    Task<ExerciseEntry> UpdateExerciseAsync(
+        Guid sessionId,
+        Guid exerciseId,
+        string? autoLabel,
+        string? photoUrl,
+        IEnumerable<ExerciseProperty>? properties = null,
+        CancellationToken ct = default);
+
     Task<ExerciseEntry> StartExerciseAsync(
         Guid sessionId,
         Guid exerciseId,

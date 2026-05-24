@@ -58,7 +58,7 @@ public sealed class TrainingSession
         }
     }
 
-    /// <summary>Adds a new exercise, doesn't starts it immediately, and auto-finishes any running exercise.</summary>
+    /// <summary>Adds a new exercise, doesn't start it immediately, and auto-finishes any running exercise.</summary>
     public ExerciseEntry AddExercise(
         string autoLabel,
         string? photoUrl,
