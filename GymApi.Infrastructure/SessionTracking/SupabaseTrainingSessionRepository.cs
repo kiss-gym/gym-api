@@ -15,16 +15,14 @@ public sealed class SupabaseTrainingSessionRepository(GymApiDbContext db) : ITra
             .AsNoTracking()
             .AnyAsync(s => s.Id == session.Id, ct);
 
-        if (exists)
-        {
-            db.TrainingSessions.Update(session);
-        }
-        else
+        if (!exists)
         {
             await db.TrainingSessions.AddAsync(session, ct);
+            await db.SaveChangesAsync(ct);
+            return;
         }
 
-        await db.SaveChangesAsync(ct);
+        await ReplaceExistingSessionGraphAsync(session, ct);
     }
 
     public async Task<TrainingSession?> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -88,6 +86,49 @@ public sealed class SupabaseTrainingSessionRepository(GymApiDbContext db) : ITra
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private async Task ReplaceExistingSessionGraphAsync(
+        TrainingSession session,
+        CancellationToken ct)
+    {
+        db.ChangeTracker.Clear();
+        var ownsTransaction = db.Database.CurrentTransaction is null;
+        await using var tx = ownsTransaction ? await db.Database.BeginTransactionAsync(ct) : null;
+
+        // Update the aggregate root row directly; children are handled below.
+        await db.TrainingSessions
+            .Where(s => s.Id == session.Id)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(s => s.UserId, session.UserId)
+                .SetProperty(s => s.Label, session.Label)
+                .SetProperty(s => s.CreatedAt, session.CreatedAt)
+                .SetProperty(s => s.FinishedAt, session.FinishedAt)
+                .SetProperty(s => s.Status, session.Status)
+                .SetProperty(s => s.InheritedFromSessionId, session.InheritedFromSessionId), ct);
+
+        // Replace child rows from the current in-memory snapshot.
+        await db.ExerciseEntries
+            .Where(e => EF.Property<Guid>(e, "session_id") == session.Id)
+            .ExecuteDeleteAsync(ct);
+
+        foreach (var exercise in session.Exercises)
+        {
+            db.Entry(exercise).State = EntityState.Added;
+            db.Entry(exercise).Property("session_id").CurrentValue = session.Id;
+
+            foreach (var set in exercise.SortedSets)
+            {
+                db.Entry(set).State = EntityState.Added;
+                db.Entry(set).Property("exercise_id").CurrentValue = exercise.Id;
+            }
+        }
+
+        await db.SaveChangesAsync(ct);
+        if (tx is not null)
+        {
+            await tx.CommitAsync(ct);
+        }
+    }
 
     private static IQueryable<TrainingSession> ApplySort(
         IQueryable<TrainingSession> query, string? sort)

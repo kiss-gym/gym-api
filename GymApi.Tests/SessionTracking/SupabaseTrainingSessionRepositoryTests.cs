@@ -121,6 +121,24 @@ public sealed class SupabaseTrainingSessionRepositoryTests : RepositoryIntegrati
     }
 
     [Test]
+    public async Task SaveAsync_SetAddedToExistingSession_IsPersisted()
+    {
+        var session = TrainingSession.Create(_userId);
+        session.AddExercise("Pull-up", null);
+        await _sut.SaveAsync(session);
+
+        DbContext.ChangeTracker.Clear();
+        var existing = await _sut.GetByIdAsync(session.Id);
+        existing!.Exercises[0].AddSet(null, 10);
+
+        await _sut.SaveAsync(existing);
+
+        DbContext.ChangeTracker.Clear();
+        var retrieved = await _sut.GetByIdAsync(session.Id);
+        Assert.That(retrieved!.Exercises[0].SortedSets, Has.Count.EqualTo(1));
+    }
+
+    [Test]
     public async Task SaveAsync_RemovedSet_IsNoLongerPersisted()
     {
         var session = TrainingSession.Create(_userId);
@@ -134,6 +152,25 @@ public sealed class SupabaseTrainingSessionRepositoryTests : RepositoryIntegrati
 
         var retrieved = await _sut.GetByIdAsync(session.Id);
         Assert.That(retrieved!.Exercises[0].SortedSets, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task SaveAsync_SetRemovedFromExistingSession_IsDeleted()
+    {
+        var session = TrainingSession.Create(_userId);
+        var exercise = session.AddExercise("Row", null);
+        exercise.AddSet(80m, 10);
+        await _sut.SaveAsync(session);
+
+        DbContext.ChangeTracker.Clear();
+        var existing = await _sut.GetByIdAsync(session.Id);
+        existing!.Exercises[0].RemoveSet(existing.Exercises[0].SortedSets[0].Id);
+
+        await _sut.SaveAsync(existing);
+
+        DbContext.ChangeTracker.Clear();
+        var retrieved = await _sut.GetByIdAsync(session.Id);
+        Assert.That(retrieved!.Exercises[0].SortedSets, Is.Empty);
     }
 
     [Test]
